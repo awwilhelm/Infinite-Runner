@@ -13,6 +13,6 @@ public class ThirdPersonCamera : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
 	{
-		transform.position = new Vector3(0, player.transform.position.y+2, player.transform.position.z -5);
+		transform.position = new Vector3(player.transform.position.x, player.transform.position.y, player.transform.position.z-5);
 	}
 }
