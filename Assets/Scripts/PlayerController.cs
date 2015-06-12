@@ -3,83 +3,91 @@ using System.Collections;
 
 public class PlayerController : MonoBehaviour {
 
-	float startingVelocity = 70;
-	float velocity;
-	float floorHeight = 1f;
-	float gravity = -20f;
-	bool jumping = false;
-	bool ducking = false;
-	float duckingLength = 1;
-	float timePressedDuck;
-	float speed = 10;
-	float crouchVal = 0;
-	RaycastHit hit;
-	RaycastHit futureHit;
-	Vector3 futurePosition;
+	private GameObject spawnPoint;
+
+	private float velocity;
+	private bool jumping;
+	private bool ducking;
+	private float timePressedDuck;
+	private float crouchVal;
+	private RaycastHit hit;
+	private RaycastHit futureHit;
+	private Vector3 futurePosition;
+	
+	private const float startingVelocity = 30.0f;
+	private const float gravity = -90.0f;
+	private const float duckingLength = 1.0f;
+	private const float forwardSpeed = 10.0f;
+	private const float BUFFER = 0.000001f;
+
 	// Use this for initialization
 	void Start () {
-		
-		float velocity = startingVelocity;
+		spawnPoint = GameObject.Find("SpawnPoint");
+
+		velocity = 0;
+		jumping = false;
+		ducking = false;
+		crouchVal = 1;
 		Spawn();
 	}
 	
 	// Update is called once per frame
 	void Update ()
 	{
+		Vector3 currPosBasedOnState;
+		Vector3 futurePosBasedOnState;
 		if(Input.GetButton("Horizontal"))
 		{
 			transform.position = new Vector3(transform.position.x + Input.GetAxis("Horizontal")*Time.deltaTime*10, transform.position.y, transform.position.z);
 		}
 
-		if(Input.GetButton("Jump") && !jumping)
+		if(Input.GetButton("Jump") && !jumping && !ducking)
 		{
-			velocity = Mathf.Abs(velocity);
+			velocity = startingVelocity;
 			jumping = true;
 		}
 
-		if(Input.GetButton("Duck") && !ducking)
+		if(Input.GetButton("Duck") && !ducking && !jumping)
 		{
 			ducking = true;
-			crouchVal = 0;
+			crouchVal = 0.5f;
 			timePressedDuck = Time.time;
-			transform.position = new Vector3(transform.position.x, 0, transform.position.z);
 			transform.localScale = new Vector3(transform.localScale.x, transform.localScale.y-crouchVal, transform.localScale.z);
 		}
 
-		if(jumping)
-		{
-			transform.position = new Vector3(transform.position.x, transform.position.y + Time.deltaTime*velocity, transform.position.z);
-			velocity *= 0.9f;
-
-		}
-		else if(ducking && Time.time - timePressedDuck > duckingLength)
+		if(ducking && Time.time - timePressedDuck > duckingLength)
 		{
 			ducking = false;
-			crouchVal = 0;
-			//transform.localScale = new Vector3(1 ,1 ,1);
+			crouchVal = 1;
+			transform.position = new Vector3(transform.position.x, 1.1f, transform.position.z);
+			transform.localScale = new Vector3(1 ,1 ,1);
 		}
+		
+		float futureVelocity = velocity + gravity*Time.deltaTime; 
+		futurePosition = new Vector3(transform.position.x, transform.position.y + (Time.deltaTime*(futureVelocity+velocity)/2), transform.position.z);
+		velocity = futureVelocity;
 
-		futurePosition = new Vector3(transform.position.x, transform.position.y + Time.deltaTime*gravity, transform.position.z);
+		currPosBasedOnState = new Vector3(transform.position.x, transform.position.y-crouchVal, transform.position.z);
+		futurePosBasedOnState = new Vector3(futurePosition.x, futurePosition.y-crouchVal, futurePosition.z);
 
-		Vector3 temp = new Vector3(transform.position.x, transform.position.y-1, transform.position.z);
-		Vector3 temp2 = new Vector3(futurePosition.x, futurePosition.y-1, futurePosition.z);
-		Physics.Raycast(temp, -Vector3.up, out hit);
-		Physics.Raycast(temp2, -Vector3.up, out futureHit);
+		Physics.Raycast(currPosBasedOnState, -Vector3.up, out hit);
+		Physics.Raycast(futurePosBasedOnState, -Vector3.up, out futureHit);
 
-		Debug.DrawLine(temp, hit.point, Color.green, 20, false);
-		Debug.DrawLine(new Vector3(temp2.x, temp2.y, temp2.z+0.05f), new Vector3(futureHit.point.x, futureHit.point.y, futureHit.point.z+0.05f), Color.blue, 20, false);
+		Debug.DrawLine(currPosBasedOnState, hit.point, Color.green, 20, false);
+		Debug.DrawLine(new Vector3(futurePosBasedOnState.x, futurePosBasedOnState.y, futurePosBasedOnState.z+0.05f), new Vector3(futureHit.point.x, futureHit.point.y, futureHit.point.z+0.05f), Color.blue, 20, false);
 
-		if(Physics.Raycast(temp, -Vector3.up, out hit) && hit.transform.tag == "Ground" && Physics.Raycast(temp2, -Vector3.up, out futureHit) && futureHit.transform.tag != "Ground")
+		if(hit.transform.tag == "Ground" && futureHit.transform.tag != "Ground")
 		{
-			velocity = startingVelocity;
 			jumping = false;
+			transform.position = new Vector3(transform.position.x, hit.point.y + crouchVal + BUFFER, transform.position.z);
+			velocity = 0;
 		}
 		else
 		{
 			transform.position = new Vector3(futurePosition.x, futurePosition.y, futurePosition.z);
 		}
 
-		transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + Time.deltaTime * speed);
+		transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + Time.deltaTime * forwardSpeed);
 	}
 
 
@@ -93,6 +101,6 @@ public class PlayerController : MonoBehaviour {
 
 	void Spawn()
 	{
-		transform.position = new Vector3(0,1.1f,0);
+		transform.position = new Vector3(spawnPoint.transform.position.x, spawnPoint.transform.position.y + BUFFER, spawnPoint.transform.position.z);
 	}
 }
