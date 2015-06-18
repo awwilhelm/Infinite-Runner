@@ -4,6 +4,9 @@ using System.Collections;
 public class PlayerController : MonoBehaviour {
 
 	private GameObject spawnPoint;
+	private GameObject generatedTerrain;
+
+	private GenerateWorld generateWorldScript;
 
 	private float velocity;
 	private bool jumping;
@@ -16,18 +19,16 @@ public class PlayerController : MonoBehaviour {
 	
 	private const float startingVelocity = 30.0f;
 	private const float gravity = -90.0f;
-	private const float duckingLength = 1.0f;
-	private const float forwardSpeed = 10.0f;
+	private const float duckingLength = 0.75f;
 	private const float BUFFER = 0.000001f;
 
 	// Use this for initialization
 	void Start () {
 		spawnPoint = GameObject.Find("SpawnPoint");
+		generatedTerrain = GameObject.Find("Generated Terrain");
 
-		velocity = 0;
-		jumping = false;
-		ducking = false;
-		crouchVal = 1;
+		generateWorldScript = GameObject.Find("World").GetComponent<GenerateWorld>();
+
 		Spawn();
 	}
 	
@@ -59,7 +60,7 @@ public class PlayerController : MonoBehaviour {
 		{
 			ducking = false;
 			crouchVal = 1;
-			transform.position = new Vector3(transform.position.x, 1.1f, transform.position.z);
+			transform.position = new Vector3(transform.position.x, spawnPoint.transform.position.y + BUFFER, transform.position.z);
 			transform.localScale = new Vector3(1 ,1 ,1);
 		}
 		
@@ -73,9 +74,6 @@ public class PlayerController : MonoBehaviour {
 		Physics.Raycast(currPosBasedOnState, -Vector3.up, out hit);
 		Physics.Raycast(futurePosBasedOnState, -Vector3.up, out futureHit);
 
-		Debug.DrawLine(currPosBasedOnState, hit.point, Color.green, 20, false);
-		Debug.DrawLine(new Vector3(futurePosBasedOnState.x, futurePosBasedOnState.y, futurePosBasedOnState.z+0.05f), new Vector3(futureHit.point.x, futureHit.point.y, futureHit.point.z+0.05f), Color.blue, 20, false);
-
 		if(hit.transform.tag == "Ground" && futureHit.transform.tag != "Ground")
 		{
 			jumping = false;
@@ -86,21 +84,37 @@ public class PlayerController : MonoBehaviour {
 		{
 			transform.position = new Vector3(futurePosition.x, futurePosition.y, futurePosition.z);
 		}
-
-		transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + Time.deltaTime * forwardSpeed);
 	}
 
+	public bool GetCrouch()
+	{
+		return ducking;
+	}
+
+	public bool GetJump()
+	{
+		return jumping;
+	}
 
 	void OnCollisionEnter (Collision col)
 	{
 		if(col.transform.tag == "Death")
 		{
 			Spawn();
+			generateWorldScript.StartNewGame();
 		}
 	}
 
 	void Spawn()
 	{
-		transform.position = new Vector3(spawnPoint.transform.position.x, spawnPoint.transform.position.y + BUFFER, spawnPoint.transform.position.z);
+		if(spawnPoint != null)
+			transform.position = new Vector3(spawnPoint.transform.position.x, spawnPoint.transform.position.y + BUFFER, spawnPoint.transform.position.z);
+
+		generatedTerrain.transform.position = Vector3.zero;
+		transform.localScale = new Vector3(1 ,1 ,1);
+		jumping = false;
+		ducking = false;
+		velocity = 0;
+		crouchVal = 1;
 	}
 }
