@@ -12,14 +12,20 @@ public class GenerateWorld : MonoBehaviour {
 	public GameObject jumpCenterGapTerrain;
 	public GameObject jumpRightGapTerrain;
 	public GameObject duckObstacleTerrain;
+	public GameObject turnRightTerrain;
+	public GameObject turnLeftTerrain;
 
 	private GameObject generatedTerrain;
 	private ArrayList terrainType = new ArrayList();
 	private Queue<GameObject> terrain;
 	private int nextBlockLocation;
+	private int nextBlockLocationX;
 	private int countTerrainBlocks = 0;
 
-	private const int NUMBER_OF_BLOCKS = 10;
+	private delegate void AddCorrectDirection();
+	private AddCorrectDirection addCorrectDirection;
+
+	private const int NUMBER_OF_BLOCKS = 20;
 	private const int MIN_RUN_SPACE = 6;
 
 	void Awake()
@@ -31,7 +37,9 @@ public class GenerateWorld : MonoBehaviour {
 	void Start ()
 	{
 		terrain = new Queue<GameObject>();
+		addCorrectDirection = AddZPosition;
 		nextBlockLocation = 0;
+		nextBlockLocationX = 0;
 		GenerateStartingTerrain();
 		PlaceStartingTerrain();
 
@@ -60,7 +68,7 @@ public class GenerateWorld : MonoBehaviour {
 	private int GenerateRandomType()
 	{
 
-		return Random.Range(1,8);
+		return Random.Range(5,10);
 	}
 
 	private void AddBlock(int type)
@@ -94,11 +102,42 @@ public class GenerateWorld : MonoBehaviour {
 		{
 			initialized = Instantiate(duckObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject;
 		}
+		else if(type == 8)
+		{
+			if(addCorrectDirection == MinusXPosition || addCorrectDirection == AddXPosition)
+			{
+				initialized = MakeRightTurn(AddZPosition);
+			}
+			else
+			{
+				initialized = MakeLeftTurn(AddXPosition);
+			}
+		}
+		else if(type == 9)
+		{
+			if(addCorrectDirection == MinusXPosition || addCorrectDirection == AddXPosition)
+			{
+				initialized = MakeRightTurn(AddZPosition);
+			}
+			else
+			{
+				initialized = MakeLeftTurn(MinusXPosition);
+			}
+		}
+
+		if(addCorrectDirection == AddXPosition || addCorrectDirection == MinusXPosition)
+		{
+			initialized.transform.rotation = Quaternion.Euler(0, 90, 0);
+		}
+		else
+		{
+			initialized.transform.rotation = Quaternion.Euler(0, 0, 0);
+		}
 		initialized.transform.parent = generatedTerrain.transform;
-		initialized.transform.localPosition = new Vector3(0, -0.5f, nextBlockLocation*10);
+		initialized.transform.localPosition = new Vector3(nextBlockLocationX*10, -0.5f, nextBlockLocation*10);
 		initialized.name = name+countTerrainBlocks;
 		countTerrainBlocks++;
-		nextBlockLocation++;
+		addCorrectDirection();
 		terrain.Enqueue(initialized);
 	}
 
@@ -122,9 +161,38 @@ public class GenerateWorld : MonoBehaviour {
 		RemoveAllBlocks();
 		terrainType.Clear();
 		terrain.Clear();
+		addCorrectDirection = AddZPosition;
 		nextBlockLocation = 0;
+		nextBlockLocationX = 0;
 		GenerateStartingTerrain();
 		PlaceStartingTerrain();
+	}
+
+	private void AddZPosition()
+	{
+		nextBlockLocation++;
+	}
+
+	private void AddXPosition()
+	{
+		nextBlockLocationX++;
+	}
+
+	private void MinusXPosition()
+	{
+		nextBlockLocationX--;
+	}
+
+	private GameObject MakeLeftTurn(AddCorrectDirection XPos)
+	{
+		addCorrectDirection = XPos;
+		return Instantiate(turnLeftTerrain, Vector3.zero, Quaternion.identity) as GameObject;
+	}
+
+	private GameObject MakeRightTurn(AddCorrectDirection ZPos)
+	{
+		addCorrectDirection = ZPos;
+		return Instantiate(turnRightTerrain, Vector3.zero, Quaternion.identity) as GameObject;
 	}
 	
 }

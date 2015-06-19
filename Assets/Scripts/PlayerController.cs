@@ -22,17 +22,14 @@ public class PlayerController : MonoBehaviour {
 	private const float duckingLength = 0.75f;
 	private const float BUFFER = 0.000001f;
 
-	// Use this for initialization
 	void Start () {
 		spawnPoint = GameObject.Find("SpawnPoint");
 		generatedTerrain = GameObject.Find("Generated Terrain");
-
 		generateWorldScript = GameObject.Find("World").GetComponent<GenerateWorld>();
 
 		Spawn();
 	}
-	
-	// Update is called once per frame
+
 	void Update ()
 	{
 		Vector3 currPosBasedOnState;
@@ -105,12 +102,27 @@ public class PlayerController : MonoBehaviour {
 		}
 	}
 
+	void OnTriggerEnter(Collider col)
+	{
+		if(col.transform.tag == "TurningRight")
+		{
+			print ("here");
+			transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y + 90, transform.rotation.eulerAngles.z);
+		}
+		if(col.transform.tag == "TurningLeft")
+		{
+			print ("here");
+			transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y - 90, transform.rotation.eulerAngles.z);
+		}
+	}
+
 	void Spawn()
 	{
 		if(spawnPoint != null)
 			transform.position = new Vector3(spawnPoint.transform.position.x, spawnPoint.transform.position.y + BUFFER, spawnPoint.transform.position.z);
 
 		generatedTerrain.transform.position = Vector3.zero;
+		transform.rotation = Quaternion.identity;
 		transform.localScale = new Vector3(1 ,1 ,1);
 		jumping = false;
 		ducking = false;
