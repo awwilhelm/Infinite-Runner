@@ -7,6 +7,7 @@ public class PlayerController : MonoBehaviour {
 	private GameObject generatedTerrain;
 
 	private GenerateWorld generateWorldScript;
+	private ManageWorld manageWorldScript;
 
 	private float velocity;
 	private bool jumping;
@@ -26,6 +27,7 @@ public class PlayerController : MonoBehaviour {
 		spawnPoint = GameObject.Find("SpawnPoint");
 		generatedTerrain = GameObject.Find("Generated Terrain");
 		generateWorldScript = GameObject.Find("World").GetComponent<GenerateWorld>();
+		manageWorldScript = generatedTerrain.GetComponent<ManageWorld>();
 
 		Spawn();
 	}
@@ -36,7 +38,9 @@ public class PlayerController : MonoBehaviour {
 		Vector3 futurePosBasedOnState;
 		if(Input.GetButton("Horizontal"))
 		{
-			transform.position = new Vector3(transform.position.x + Input.GetAxis("Horizontal")*Time.deltaTime*10, transform.position.y, transform.position.z);
+			transform.Translate(new Vector3(Input.GetAxis("Horizontal")*Time.deltaTime*10, 0, 0));
+			//transform.position = transform.TransformPoint(Input.GetAxis("Horizontal")*Time.deltaTime, 0, 0);
+			//transform.localPosition = new Vector3(transform.localPosition.x + Input.GetAxis("Horizontal")*Time.deltaTime*10, transform.localPosition.y, transform.localPosition.z);
 		}
 
 		if(Input.GetButton("Jump") && !jumping && !ducking)
@@ -106,12 +110,12 @@ public class PlayerController : MonoBehaviour {
 	{
 		if(col.transform.tag == "TurningRight")
 		{
-			print ("here");
+			manageWorldScript.TurnRight();
 			transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y + 90, transform.rotation.eulerAngles.z);
 		}
 		if(col.transform.tag == "TurningLeft")
 		{
-			print ("here");
+			manageWorldScript.TurnLeft();
 			transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y - 90, transform.rotation.eulerAngles.z);
 		}
 	}
@@ -122,7 +126,7 @@ public class PlayerController : MonoBehaviour {
 			transform.position = new Vector3(spawnPoint.transform.position.x, spawnPoint.transform.position.y + BUFFER, spawnPoint.transform.position.z);
 
 		generatedTerrain.transform.position = Vector3.zero;
-		transform.rotation = Quaternion.identity;
+		transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles.x, 0, transform.rotation.eulerAngles.z);//Quaternion.identity;
 		transform.localScale = new Vector3(1 ,1 ,1);
 		jumping = false;
 		ducking = false;

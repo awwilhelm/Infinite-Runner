@@ -15,10 +15,13 @@ public class GenerateWorld : MonoBehaviour {
 	public GameObject turnRightTerrain;
 	public GameObject turnLeftTerrain;
 
+	private ManageWorld manageWorldScript;
+
 	private GameObject generatedTerrain;
 	private ArrayList terrainType = new ArrayList();
 	private Queue<GameObject> terrain;
 	private int nextBlockLocation;
+	private float terrainRotation;
 	private int nextBlockLocationX;
 	private int countTerrainBlocks = 0;
 
@@ -36,10 +39,13 @@ public class GenerateWorld : MonoBehaviour {
 
 	void Start ()
 	{
+		manageWorldScript = generatedTerrain.GetComponent<ManageWorld>();
+		manageWorldScript.SetForward();
 		terrain = new Queue<GameObject>();
 		addCorrectDirection = AddZPosition;
 		nextBlockLocation = 0;
 		nextBlockLocationX = 0;
+		terrainRotation = 0;
 		GenerateStartingTerrain();
 		PlaceStartingTerrain();
 
@@ -74,6 +80,7 @@ public class GenerateWorld : MonoBehaviour {
 	private void AddBlock(int type)
 	{
 		GameObject initialized = null;
+
 		if(type == 1)
 		{
 			initialized = Instantiate(flatTerrain, Vector3.zero, Quaternion.identity) as GameObject;
@@ -102,22 +109,30 @@ public class GenerateWorld : MonoBehaviour {
 		{
 			initialized = Instantiate(duckObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject;
 		}
-		else if(type == 8)
+		else if(type == 8) //Right turn
 		{
-			if(addCorrectDirection == MinusXPosition || addCorrectDirection == AddXPosition)
+			if(addCorrectDirection == MinusXPosition)
 			{
 				initialized = MakeRightTurn(AddZPosition);
+			}
+			else if(addCorrectDirection == AddXPosition)
+			{
+				initialized = MakeLeftTurn(AddZPosition);
 			}
 			else
 			{
-				initialized = MakeLeftTurn(AddXPosition);
+				initialized = MakeRightTurn(AddXPosition);
 			}
 		}
-		else if(type == 9)
+		else if(type == 9) //Left turn
 		{
-			if(addCorrectDirection == MinusXPosition || addCorrectDirection == AddXPosition)
+			if(addCorrectDirection == MinusXPosition)
 			{
 				initialized = MakeRightTurn(AddZPosition);
+			}
+			else if(addCorrectDirection == AddXPosition)
+			{
+				initialized = MakeLeftTurn(AddZPosition);
 			}
 			else
 			{
@@ -125,14 +140,15 @@ public class GenerateWorld : MonoBehaviour {
 			}
 		}
 
-		if(addCorrectDirection == AddXPosition || addCorrectDirection == MinusXPosition)
-		{
-			initialized.transform.rotation = Quaternion.Euler(0, 90, 0);
-		}
+		initialized.transform.rotation = Quaternion.Euler(0, terrainRotation, 0);
+
+		if(addCorrectDirection == AddZPosition)
+			terrainRotation = 0;
+		else if(addCorrectDirection == AddXPosition)
+			terrainRotation = 90;
 		else
-		{
-			initialized.transform.rotation = Quaternion.Euler(0, 0, 0);
-		}
+			terrainRotation = -90;
+
 		initialized.transform.parent = generatedTerrain.transform;
 		initialized.transform.localPosition = new Vector3(nextBlockLocationX*10, -0.5f, nextBlockLocation*10);
 		initialized.name = name+countTerrainBlocks;
@@ -161,9 +177,11 @@ public class GenerateWorld : MonoBehaviour {
 		RemoveAllBlocks();
 		terrainType.Clear();
 		terrain.Clear();
+		manageWorldScript.SetForward();
 		addCorrectDirection = AddZPosition;
 		nextBlockLocation = 0;
 		nextBlockLocationX = 0;
+		terrainRotation = 0;
 		GenerateStartingTerrain();
 		PlaceStartingTerrain();
 	}
