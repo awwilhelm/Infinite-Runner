@@ -8,6 +8,7 @@ public class PlayerController : MonoBehaviour {
 
 	private GenerateWorld generateWorldScript;
 	private ManageWorld manageWorldScript;
+	private ThirdPersonCamera thirdPersonCameraScript;
 
 	private float velocity;
 	private bool jumping;
@@ -27,6 +28,7 @@ public class PlayerController : MonoBehaviour {
 		spawnPoint = GameObject.Find("SpawnPoint");
 		generatedTerrain = GameObject.Find("Generated Terrain");
 		generateWorldScript = GameObject.Find("World").GetComponent<GenerateWorld>();
+		thirdPersonCameraScript = Camera.main.GetComponent<ThirdPersonCamera>();
 		manageWorldScript = generatedTerrain.GetComponent<ManageWorld>();
 
 		Spawn();
@@ -118,6 +120,7 @@ public class PlayerController : MonoBehaviour {
 			manageWorldScript.TurnLeft();
 			transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y - 90, transform.rotation.eulerAngles.z);
 		}
+		thirdPersonCameraScript.Turning();
 	}
 
 	void Spawn()

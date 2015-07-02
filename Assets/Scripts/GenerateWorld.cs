@@ -73,8 +73,9 @@ public class GenerateWorld : MonoBehaviour {
 
 	private int GenerateRandomType()
 	{
-
-		return Random.Range(5,10);
+		if(Random.Range(0,10) < 4)
+			return 1;
+		return Random.Range(8,10);
 	}
 
 	private void AddBlock(int type)
