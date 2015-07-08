@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 
 public class PlayerController : MonoBehaviour {
@@ -23,6 +23,9 @@ public class PlayerController : MonoBehaviour {
 	private const float gravity = -90.0f;
 	private const float duckingLength = 0.75f;
 	private const float BUFFER = 0.000001f;
+	private const float RUNWAY_EDGE = 4.3f;
+
+	private bool inCollider = false;
 
 	void Start () {
 		spawnPoint = GameObject.Find("SpawnPoint");
@@ -40,9 +43,25 @@ public class PlayerController : MonoBehaviour {
 		Vector3 futurePosBasedOnState;
 		if(Input.GetButton("Horizontal"))
 		{
-			transform.Translate(new Vector3(Input.GetAxis("Horizontal")*Time.deltaTime*10, 0, 0));
-			//transform.position = transform.TransformPoint(Input.GetAxis("Horizontal")*Time.deltaTime, 0, 0);
-			//transform.localPosition = new Vector3(transform.localPosition.x + Input.GetAxis("Horizontal")*Time.deltaTime*10, transform.localPosition.y, transform.localPosition.z);
+			transform.Translate(Vector3.right * Input.GetAxis("Horizontal")*Time.deltaTime*10);
+
+			if(transform.position.x >= RUNWAY_EDGE)
+			{
+				transform.position = new Vector3(RUNWAY_EDGE, transform.position.y, transform.position.z);
+			}
+			else if(transform.position.x <= -RUNWAY_EDGE)
+			{
+				transform.position = new Vector3(-RUNWAY_EDGE, transform.position.y, transform.position.z);
+			}
+			
+			if (transform.position.z >= RUNWAY_EDGE)
+			{
+				transform.position = new Vector3(transform.position.x , transform.position.y, RUNWAY_EDGE);
+			}
+			else if(transform.position.z <= -RUNWAY_EDGE)
+			{
+				transform.position = new Vector3(transform.position.x, transform.position.y, -RUNWAY_EDGE);
+			}
 		}
 
 		if(Input.GetButton("Jump") && !jumping && !ducking)
@@ -113,23 +132,49 @@ public class PlayerController : MonoBehaviour {
 		if(col.transform.tag == "TurningRight")
 		{
 			manageWorldScript.TurnRight();
+			manageWorldScript.RoundTransformPosition(col);
 			transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y + 90, transform.rotation.eulerAngles.z);
+			if(manageWorldScript.GetDirection() == 0)
+			{
+				transform.position = new Vector3(transform.position.z, transform.position.y, transform.position.z);
+			}
+			else if(manageWorldScript.GetDirection() == 1)
+			{
+				transform.position = new Vector3(transform.position.x, transform.position.y, -(transform.position.x));
+			}
+			thirdPersonCameraScript.Turning();
+			inCollider = true;
 		}
+
 		if(col.transform.tag == "TurningLeft")
 		{
 			manageWorldScript.TurnLeft();
+			manageWorldScript.RoundTransformPosition(col);
 			transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y - 90, transform.rotation.eulerAngles.z);
+			if(manageWorldScript.GetDirection() == 0)
+			{
+				transform.position = new Vector3(-(transform.position.z), transform.position.y, transform.position.z);
+			}
+			else if(manageWorldScript.GetDirection() == 2)
+			{
+				transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.x);
+			}
+			thirdPersonCameraScript.Turning();
+			inCollider = true;
 		}
-		thirdPersonCameraScript.Turning();
+
+		Destroy(col);
 	}
 
 	void Spawn()
 	{
 		if(spawnPoint != null)
+		{
 			transform.position = new Vector3(spawnPoint.transform.position.x, spawnPoint.transform.position.y + BUFFER, spawnPoint.transform.position.z);
+		}
 
 		generatedTerrain.transform.position = Vector3.zero;
-		transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles.x, 0, transform.rotation.eulerAngles.z);//Quaternion.identity;
+		transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles.x, 0, transform.rotation.eulerAngles.z);
 		transform.localScale = new Vector3(1 ,1 ,1);
 		jumping = false;
 		ducking = false;

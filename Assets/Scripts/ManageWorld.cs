@@ -6,7 +6,7 @@ public class ManageWorld : MonoBehaviour {
 	private GenerateWorld generateWorldScript;
 	
 	private const float FORWARD_SPEED = 10.0f;
-	private const int REGENERATE_LIMIT = -20;
+	private const int REGENERATE_LIMIT = 20;
 
 	private enum Direction
 	{
@@ -28,7 +28,7 @@ public class ManageWorld : MonoBehaviour {
 	{
 		StepDirection();
 
-		if(transform.GetChild(0).position.z < REGENERATE_LIMIT)
+		if(Mathf.Abs(transform.GetChild(0).position.z) + Mathf.Abs(transform.GetChild(0).position.x) > REGENERATE_LIMIT)
 		{
 			generateWorldScript.RemoveBlock();
 		}
@@ -40,8 +40,6 @@ public class ManageWorld : MonoBehaviour {
 			direction = Direction.forward;
 		else if(direction == Direction.forward)
 			direction = Direction.right;
-		
-		RoundTransformPosition();
 	}
 
 	public void TurnLeft()
@@ -50,46 +48,17 @@ public class ManageWorld : MonoBehaviour {
 			direction = Direction.left;
 		else if(direction == Direction.right)
 			direction = Direction.forward;
-		
-		RoundTransformPosition();
 	}
 
-	private void RoundTransformPosition()
+	public void RoundTransformPosition(Collider col)
 	{
-		float x = transform.position.x;
-		float z = transform.position.z;
-
 		if(direction == Direction.forward)
 		{
-			if(Mathf.Abs(transform.position.x % 10) >= 5)
-			{
-				if(Mathf.Sign(transform.position.x%10) == 1) 
-					x = Mathf.RoundToInt(transform.position.x + (10 - transform.position.x % 10));
-				else
-				{
-					x = Mathf.RoundToInt(transform.position.x - (10 + transform.position.x % 10));
-				}
-			}
-			else
-			{
-				x = Mathf.Round(transform.position.x - transform.position.x % 10);
-				StepDirection();
-			}
-			
-			transform.position = new Vector3(x, transform.position.y, transform.position.z);
+			transform.position = new Vector3(transform.position.x - col.transform.position.x, transform.position.y, transform.position.z);
 		}
 		if(direction == Direction.left || direction == Direction.right)
 		{
-			if(Mathf.Abs(transform.position.z % 10) >= 5)
-			{
-				z = Mathf.RoundToInt(transform.position.z - (10 + transform.position.z % 10));
-			}
-			else
-			{
-				z = Mathf.RoundToInt(transform.position.z - (transform.position.z % 10));
-				StepDirection();
-			}
-			transform.position = new Vector3(transform.position.x, transform.position.y, z);
+			transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z - col.transform.position.z);
 		}
 	}
 

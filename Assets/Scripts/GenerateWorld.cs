@@ -29,12 +29,14 @@ public class GenerateWorld : MonoBehaviour {
 	private AddCorrectDirection addCorrectDirection;
 
 	private const int NUMBER_OF_BLOCKS = 20;
-	private const int MIN_RUN_SPACE = 6;
+	private const int MIN_RUN_SPACE = 5;
 
 	void Awake()
 	{
 		generatedTerrain = new GameObject("Generated Terrain");
 		generatedTerrain.AddComponent<ManageWorld>();
+
+		generatedTerrain.transform.position = Vector3.zero;
 	}
 
 	void Start ()
@@ -43,7 +45,7 @@ public class GenerateWorld : MonoBehaviour {
 		manageWorldScript.SetForward();
 		terrain = new Queue<GameObject>();
 		addCorrectDirection = AddZPosition;
-		nextBlockLocation = 0;
+		nextBlockLocation = -4;
 		nextBlockLocationX = 0;
 		terrainRotation = 0;
 		GenerateStartingTerrain();
@@ -180,9 +182,10 @@ public class GenerateWorld : MonoBehaviour {
 		terrain.Clear();
 		manageWorldScript.SetForward();
 		addCorrectDirection = AddZPosition;
-		nextBlockLocation = 0;
+		nextBlockLocation = -4;
 		nextBlockLocationX = 0;
 		terrainRotation = 0;
+		generatedTerrain.transform.position = Vector3.zero;
 		GenerateStartingTerrain();
 		PlaceStartingTerrain();
 	}
