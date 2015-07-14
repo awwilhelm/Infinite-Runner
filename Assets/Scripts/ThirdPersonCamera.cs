@@ -26,8 +26,10 @@ public class ThirdPersonCamera : MonoBehaviour {
 		playerControllerScript = player.GetComponent<PlayerController>();
 		manageWorldScript = GameObject.Find("Generated Terrain").GetComponent<ManageWorld>();
 		transform.position = new Vector3(transform.position.x, DEFAULT_CAMERA_HEIGHT, player.transform.position.z + CAMERA_OFFSET_FROM_PLAYER);
+		transform.eulerAngles = new Vector3(DEFAULT_CAMERA_ANGLE, 0, 0);
 		startingCameraPosition = new Vector3(player.transform.position.x, player.transform.position.y, player.transform.position.z);
 		targetCameraPosition = new Vector3(startingCameraPosition.x, startingCameraPosition.y + DEFAULT_CAMERA_HEIGHT, startingCameraPosition.z + CAMERA_OFFSET_FROM_PLAYER);
+		transform.position = targetCameraPosition;
 	}
 	
 	void Update ()
@@ -41,10 +43,18 @@ public class ThirdPersonCamera : MonoBehaviour {
 			if(playerControllerScript.GetJump())
 			{
 				targetCameraPosition = new Vector3(targetCameraPosition.x, player.transform.position.y + DEFAULT_CAMERA_HEIGHT, targetCameraPosition.z);
+				transform.position = targetCameraPosition;
 			}
 			else
 			{
-				targetCameraPosition = new Vector3(targetCameraPosition.x, startingCameraPosition.y + DEFAULT_CAMERA_HEIGHT, targetCameraPosition.z);
+//				if(manageWorldScript.GetDirection() == ManageWorld.Direction.forward)
+//					targetCameraPosition = new Vector3(player.transform.position.x, startingCameraPosition.y + DEFAULT_CAMERA_HEIGHT, player.transform.position.z + CAMERA_OFFSET_FROM_PLAYER);
+//				else if(manageWorldScript.GetDirection() == ManageWorld.Direction.right)
+//					targetCameraPosition = new Vector3(player.transform.position.x + CAMERA_OFFSET_FROM_PLAYER, startingCameraPosition.y + DEFAULT_CAMERA_HEIGHT, player.transform.position.z);
+//				else
+//					targetCameraPosition = new Vector3(player.transform.position.x - CAMERA_OFFSET_FROM_PLAYER, startingCameraPosition.y + DEFAULT_CAMERA_HEIGHT, player.transform.position.z);
+
+				targetCameraPosition = new Vector3(targetCameraPosition.x, player.transform.position.y + DEFAULT_CAMERA_HEIGHT, targetCameraPosition.z);
 			}
 		}
 
@@ -61,17 +71,17 @@ public class ThirdPersonCamera : MonoBehaviour {
 		transform.position = Vector3.Lerp(transform.position, targetCameraPosition, Time.deltaTime * CAMERA_LERP_SPEED);
 
 		Vector2 newCirclePos = FindCircleExtension(transform.position.x, transform.position.z);
-		transform.position = new Vector3(newCirclePos.x, transform.position.y, newCirclePos.y);
+		//transform.position = new Vector3(newCirclePos.x, transform.position.y, newCirclePos.y);
 	}
 
 	public void Turning()
 	{
-		if(manageWorldScript.GetDirection() == 0)
+		if(manageWorldScript.GetDirection() == ManageWorld.Direction.forward)
 		{
 			cameraYRotation = 0;
 			targetCameraPosition = new Vector3(startingCameraPosition.x, startingCameraPosition.y + DEFAULT_CAMERA_HEIGHT, player.transform.position.z + CAMERA_OFFSET_FROM_PLAYER);
 		}
-		else if(manageWorldScript.GetDirection() == 1)
+		else if(manageWorldScript.GetDirection() == ManageWorld.Direction.right)
 		{
 			cameraYRotation = 90;
 			targetCameraPosition = new Vector3(player.transform.position.x + CAMERA_OFFSET_FROM_PLAYER, startingCameraPosition.y + DEFAULT_CAMERA_HEIGHT, startingCameraPosition.z);
@@ -106,5 +116,15 @@ public class ThirdPersonCamera : MonoBehaviour {
 		}
 
 		return new Vector2(circlePositionX, circlePositionZ);
+	}
+
+	public void Restart()
+	{
+		cameraYRotation = 0;
+		playerControllerScript = player.GetComponent<PlayerController>();
+		manageWorldScript = GameObject.Find("Generated Terrain").GetComponent<ManageWorld>();
+		transform.position = new Vector3(transform.position.x, DEFAULT_CAMERA_HEIGHT, player.transform.position.z + CAMERA_OFFSET_FROM_PLAYER);
+		startingCameraPosition = new Vector3(player.transform.position.x, player.transform.position.y, player.transform.position.z);
+		targetCameraPosition = new Vector3(startingCameraPosition.x, startingCameraPosition.y + DEFAULT_CAMERA_HEIGHT, startingCameraPosition.z + CAMERA_OFFSET_FROM_PLAYER);
 	}
 }

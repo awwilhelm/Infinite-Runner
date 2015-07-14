@@ -5,17 +5,17 @@ public class ManageWorld : MonoBehaviour {
 
 	private GenerateWorld generateWorldScript;
 	
-	private const float FORWARD_SPEED = 10.0f;
+	private const float FORWARD_SPEED = 12.0f;
 	private const int REGENERATE_LIMIT = 20;
 
-	private enum Direction
+	public enum Direction
 	{
 		forward,
 		right,
 		left
 	};
 
-	Direction direction;
+	private Direction direction;
 
 	void Start ()
 	{
@@ -28,7 +28,7 @@ public class ManageWorld : MonoBehaviour {
 	{
 		StepDirection();
 
-		if(Mathf.Abs(transform.GetChild(0).position.z) + Mathf.Abs(transform.GetChild(0).position.x) > REGENERATE_LIMIT)
+		if(transform.childCount > 0 && Mathf.Abs(transform.GetChild(0).position.z) + Mathf.Abs(transform.GetChild(0).position.x) > REGENERATE_LIMIT)
 		{
 			generateWorldScript.RemoveBlock();
 		}
@@ -67,9 +67,9 @@ public class ManageWorld : MonoBehaviour {
 		direction = Direction.forward;
 	}
 
-	public int GetDirection()
+	public Direction GetDirection()
 	{
-		return (int)direction;
+		return direction;
 	}
 
 	private void StepDirection()

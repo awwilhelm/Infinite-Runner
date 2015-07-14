@@ -18,6 +18,8 @@ public class PlayerController : MonoBehaviour {
 	private RaycastHit hit;
 	private RaycastHit futureHit;
 	private Vector3 futurePosition;
+
+	private bool collidedOnce;
 	
 	private const float startingVelocity = 30.0f;
 	private const float gravity = -90.0f;
@@ -25,14 +27,13 @@ public class PlayerController : MonoBehaviour {
 	private const float BUFFER = 0.000001f;
 	private const float RUNWAY_EDGE = 4.3f;
 
-	private bool inCollider = false;
-
 	void Start () {
 		spawnPoint = GameObject.Find("SpawnPoint");
 		generatedTerrain = GameObject.Find("Generated Terrain");
 		generateWorldScript = GameObject.Find("World").GetComponent<GenerateWorld>();
 		thirdPersonCameraScript = Camera.main.GetComponent<ThirdPersonCamera>();
 		manageWorldScript = generatedTerrain.GetComponent<ManageWorld>();
+		collidedOnce = false;
 
 		Spawn();
 	}
@@ -96,7 +97,7 @@ public class PlayerController : MonoBehaviour {
 		Physics.Raycast(currPosBasedOnState, -Vector3.up, out hit);
 		Physics.Raycast(futurePosBasedOnState, -Vector3.up, out futureHit);
 
-		if(hit.transform.tag == "Ground" && futureHit.transform.tag != "Ground")
+		if(hit.collider !=null && hit.transform && hit.transform.tag == "Ground" && futureHit.transform.tag != "Ground")
 		{
 			jumping = false;
 			transform.position = new Vector3(transform.position.x, hit.point.y + crouchVal + BUFFER, transform.position.z);
@@ -106,6 +107,8 @@ public class PlayerController : MonoBehaviour {
 		{
 			transform.position = new Vector3(futurePosition.x, futurePosition.y, futurePosition.z);
 		}
+
+		collidedOnce = false;
 	}
 
 	public bool GetCrouch()
@@ -122,48 +125,63 @@ public class PlayerController : MonoBehaviour {
 	{
 		if(col.transform.tag == "Death")
 		{
-			Spawn();
-			generateWorldScript.StartNewGame();
+			Application.LoadLevel(0);
+			//Spawn();
+			//generateWorldScript.StartNewGame();
 		}
 	}
 
 	void OnTriggerEnter(Collider col)
 	{
-		if(col.transform.tag == "TurningRight")
+		if(!collidedOnce)
 		{
-			manageWorldScript.TurnRight();
-			manageWorldScript.RoundTransformPosition(col);
-			transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y + 90, transform.rotation.eulerAngles.z);
-			if(manageWorldScript.GetDirection() == 0)
+			if(col.transform.tag == "TurningRight")
 			{
-				transform.position = new Vector3(transform.position.z, transform.position.y, transform.position.z);
-			}
-			else if(manageWorldScript.GetDirection() == 1)
-			{
-				transform.position = new Vector3(transform.position.x, transform.position.y, -(transform.position.x));
-			}
-			thirdPersonCameraScript.Turning();
-			inCollider = true;
-		}
+				if(col.transform.parent.tag == "TurningFork")
+				{
+					generateWorldScript.PlayerHitTurn(GenerateWorld.Path.right);
+				}
 
-		if(col.transform.tag == "TurningLeft")
-		{
-			manageWorldScript.TurnLeft();
-			manageWorldScript.RoundTransformPosition(col);
-			transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y - 90, transform.rotation.eulerAngles.z);
-			if(manageWorldScript.GetDirection() == 0)
-			{
-				transform.position = new Vector3(-(transform.position.z), transform.position.y, transform.position.z);
+				manageWorldScript.TurnRight();
+				manageWorldScript.RoundTransformPosition(col);
+				transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y + 90, transform.rotation.eulerAngles.z);
+				if(manageWorldScript.GetDirection() == ManageWorld.Direction.forward)
+				{
+					transform.position = new Vector3(transform.position.z, transform.position.y, transform.position.z);
+				}
+				else if(manageWorldScript.GetDirection() == ManageWorld.Direction.right)
+				{
+					transform.position = new Vector3(transform.position.x, transform.position.y, -(transform.position.x));
+				}
+				thirdPersonCameraScript.Turning();
+				collidedOnce = true;
+				Destroy(col.transform.parent.gameObject);
 			}
-			else if(manageWorldScript.GetDirection() == 2)
-			{
-				transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.x);
-			}
-			thirdPersonCameraScript.Turning();
-			inCollider = true;
-		}
 
-		Destroy(col);
+			else if(col.transform.tag == "TurningLeft")
+			{
+				if(col.transform.parent.tag == "TurningFork")
+				{
+					generateWorldScript.PlayerHitTurn(GenerateWorld.Path.left);
+				}
+
+				manageWorldScript.TurnLeft();
+				manageWorldScript.RoundTransformPosition(col);
+				transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y - 90, transform.rotation.eulerAngles.z);
+				if(manageWorldScript.GetDirection() == ManageWorld.Direction.forward)
+				{
+					transform.position = new Vector3(-(transform.position.z), transform.position.y, transform.position.z);
+				}
+				else if(manageWorldScript.GetDirection() == ManageWorld.Direction.left)
+				{
+					transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.x);
+				}
+				thirdPersonCameraScript.Turning();
+				collidedOnce = true;
+				Destroy(col.transform.parent.gameObject);
+			}
+
+		}
 	}
 
 	void Spawn()
@@ -173,6 +191,7 @@ public class PlayerController : MonoBehaviour {
 			transform.position = new Vector3(spawnPoint.transform.position.x, spawnPoint.transform.position.y + BUFFER, spawnPoint.transform.position.z);
 		}
 
+		thirdPersonCameraScript.Restart();
 		generatedTerrain.transform.position = Vector3.zero;
 		transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles.x, 0, transform.rotation.eulerAngles.z);
 		transform.localScale = new Vector3(1 ,1 ,1);
