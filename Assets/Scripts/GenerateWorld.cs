@@ -263,7 +263,6 @@ public class GenerateWorld : MonoBehaviour {
 		if(!choosingPath && currentNumberOfBlocks <= NUMBER_OF_BLOCKS)
 		{
 			PickBlock(GenerateRandomType());
-			print ("current number of blocks: "+ currentNumberOfBlocks);
 		}
 	}
 
@@ -272,7 +271,6 @@ public class GenerateWorld : MonoBehaviour {
 		for(int i = 0; i < generatedTerrain.transform.childCount; i++)
 		{
 			Destroy(generatedTerrain.transform.GetChild(i).gameObject);
-			print (generatedTerrain.transform.GetChild(i).gameObject.transform.name);
 		}
 		//Destroy(generatedTerrain);
 		///generatedTerrain = new GameObject("Generated Terrain");

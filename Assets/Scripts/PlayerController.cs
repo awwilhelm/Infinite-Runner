@@ -3,6 +3,7 @@ using System.Collections;
 
 public class PlayerController : MonoBehaviour {
 
+	public LayerMask playerMask;
 	private GameObject spawnPoint;
 	private GameObject generatedTerrain;
 
@@ -23,9 +24,12 @@ public class PlayerController : MonoBehaviour {
 	
 	private const float startingVelocity = 30.0f;
 	private const float gravity = -90.0f;
-	private const float duckingLength = 0.75f;
+	private const float duckingLength = 0.5f;
 	private const float BUFFER = 0.000001f;
 	private const float RUNWAY_EDGE = 4.3f;
+	private const float SKIN_WIDTH = 0.2f;
+	Vector3 currPosBasedOnState;
+	Vector3 temp;
 
 	void Start () {
 		spawnPoint = GameObject.Find("SpawnPoint");
@@ -40,7 +44,6 @@ public class PlayerController : MonoBehaviour {
 
 	void Update ()
 	{
-		Vector3 currPosBasedOnState;
 		Vector3 futurePosBasedOnState;
 		if(Input.GetButton("Horizontal"))
 		{
@@ -87,30 +90,88 @@ public class PlayerController : MonoBehaviour {
 			transform.localScale = new Vector3(1 ,1 ,1);
 		}
 		
-		float futureVelocity = velocity + gravity*Time.deltaTime; 
-		futurePosition = new Vector3(transform.position.x, transform.position.y + (Time.deltaTime*(futureVelocity+velocity)/2), transform.position.z);
+		float futureVelocity = velocity + gravity*Time.deltaTime;
+		float futureLength = Time.deltaTime * (futureVelocity + velocity)/2;
+		futureLength = Mathf.Abs(futureLength) + SKIN_WIDTH;
+		float dir = Mathf.Sign(velocity) > 0 ? 1 : -1;
 		velocity = futureVelocity;
+		currPosBasedOnState = new Vector3(transform.position.x, transform.position.y , transform.position.z);
+		temp = new Vector3(transform.position.x, transform.position.y - transform.localScale.y, transform.position.z);
+		//print (transform.position.y +" "+ transform.localScale.y);
+		//currPosBasedOnState = new Vector3(0, 5 - (transform.localScale.y), 0);
+		//transform.position = new Vector3( 0, 5, 0);
 
-		currPosBasedOnState = new Vector3(transform.position.x, transform.position.y-crouchVal, transform.position.z);
-		futurePosBasedOnState = new Vector3(futurePosition.x, futurePosition.y-crouchVal, futurePosition.z);
-
-		Physics.Raycast(currPosBasedOnState, -Vector3.up, out hit);
-		Physics.Raycast(futurePosBasedOnState, -Vector3.up, out futureHit);
-
-		if(hit.collider !=null && hit.transform && hit.transform.tag == "Ground" && futureHit.transform.tag != "Ground")
+		Debug.DrawRay(currPosBasedOnState, Vector3.up * 10, Color.red);
+		Ray ray = new Ray(currPosBasedOnState, Vector3.up);
+		bool hitting  = Physics.Raycast(ray, out hit, 0.1f, playerMask);
+		if(hitting)
 		{
-			jumping = false;
-			transform.position = new Vector3(transform.position.x, hit.point.y + crouchVal + BUFFER, transform.position.z);
-			velocity = 0;
+			print ("its hitting something");
+		}
+
+
+		if(dir < 0)
+		{
+			//print (currPosBasedOnState.x +" "+currPosBasedOnState.y + " "+ currPosBasedOnState.z);
+
+			
+			if(hit.transform && hit.transform.tag == "Ground")
+			{
+				print ("hit "+ hit.transform.tag);
+				jumping = false;
+				transform.position = new Vector3(transform.position.x, hit.point.y + transform.localScale.y + SKIN_WIDTH, transform.position.z);
+				//print(transform.position.y + " "+ (hit.point.y + transform.localScale.y ));
+				velocity = 0;
+			}
+			else if(hit.transform)
+			{	
+
+				print ("not with ground "+hit.transform.name);
+			}
+			else
+			{
+				//print (dir);
+				//transform.position = new Vector3(transform.position.x, transform.position.y + (futureLength * dir), transform.position.z);
+			}
 		}
 		else
 		{
-			transform.position = new Vector3(futurePosition.x, futurePosition.y, futurePosition.z);
+			print ("going up");
+			transform.position = new Vector3(transform.position.x, transform.position.y + futureLength + SKIN_WIDTH, transform.position.z);
 		}
+
+
+
+//		futurePosition = new Vector3(transform.position.x, transform.position.y + (Time.deltaTime*(futureVelocity+velocity)/2), transform.position.z);
+//		velocity = futureVelocity;
+//
+//		currPosBasedOnState = new Vector3(transform.position.x, transform.position.y-crouchVal, transform.position.z);
+//		futurePosBasedOnState = new Vector3(futurePosition.x, futurePosition.y-crouchVal, futurePosition.z);
+//
+//		Physics.Raycast(currPosBasedOnState, -Vector3.up, out hit);
+//		Physics.Raycast(futurePosBasedOnState, -Vector3.up, out futureHit);
+//
+
+//		if(hit.collider !=null && hit.transform && hit.transform.tag == "Ground" && futureHit.transform.tag != "Ground")
+//		{
+//			jumping = false;
+//			transform.position = new Vector3(transform.position.x, hit.point.y + crouchVal + BUFFER, transform.position.z);
+//			velocity = 0;
+//		}
+//		else
+//		{
+//			transform.position = new Vector3(futurePosition.x, futurePosition.y, futurePosition.z);
+//		}
 
 		collidedOnce = false;
 	}
-
+	void OnDrawGizmosSelected() {
+		Gizmos.color = Color.yellow;
+		Gizmos.DrawSphere(currPosBasedOnState, 0.01f);
+		
+		Gizmos.color = Color.grey;
+		Gizmos.DrawSphere(currPosBasedOnState, 0.01f);
+	}
 	public bool GetCrouch()
 	{
 		return ducking;
