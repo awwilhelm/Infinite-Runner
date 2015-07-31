@@ -42,6 +42,12 @@ public class GenerateWorld : MonoBehaviour {
 		left
 	};
 
+	private enum Theme
+	{
+		normal,
+		other
+	};
+
 	void Awake()
 	{
 		generatedTerrain = new GameObject("Generated Terrain");
@@ -64,11 +70,6 @@ public class GenerateWorld : MonoBehaviour {
 		currentNumberOfBlocks = 0;
 		GenerateStartingTerrain();
 		PlaceStartingTerrain();
-
-	}
-
-	void Update()
-	{
 	}
 
 	private void GenerateStartingTerrain()
@@ -107,110 +108,43 @@ public class GenerateWorld : MonoBehaviour {
 	{
 		if(type == 1)
 		{
-			AddBlock(Instantiate(flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+			AddFlatTerrain(Theme.normal);
 		}
 		else if(type == 2)
 		{
-			AddBlock(Instantiate(jumpObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+			AddJumpObstacleTerrain(Theme.normal);
 		}
 		else if(type == 3)
 		{
-			AddBlock(Instantiate(jumpGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+			AddJumpGapTerrain(Theme.normal);
 		}
 		else if(type == 4)
 		{
-			AddBlock(Instantiate(jumpLeftGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+			AddJumpLeftGapTerrain(Theme.normal);
 		}
 		else if(type == 5)
 		{
-			AddBlock(Instantiate(jumpCenterGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+			AddJumpCenterGapTerrain(Theme.normal);
 		}
 		else if(type == 6)
 		{
-			AddBlock(Instantiate(jumpRightGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+			AddJumpRightGapTerrain(Theme.normal);
 		}
 		else if(type == 7)
 		{
-			AddBlock(Instantiate(duckObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+			AddDuckObstacleTerrain(Theme.normal);
 		}
 		else if(type == 8) //Right turn
 		{
-			if(addCorrectDirection == MinusXPosition)
-			{
-				AddBlock(MakeRightTurn(AddZPosition), Path.current);
-			}
-			else if(addCorrectDirection == AddXPosition)
-			{
-				AddBlock(MakeLeftTurn(AddZPosition), Path.current);
-			}
-			else
-			{
-				AddBlock(MakeRightTurn(AddXPosition), Path.current);
-			}
+			AddMakeRightTurn(Theme.normal);
 		}
 		else if(type == 9) //Left turn
 		{
-			if(addCorrectDirection == MinusXPosition)
-			{
-				AddBlock(MakeRightTurn(AddZPosition), Path.current);
-			}
-			else if(addCorrectDirection == AddXPosition)
-			{
-				AddBlock(MakeLeftTurn(AddZPosition), Path.current);
-			}
-			else
-			{
-				AddBlock(MakeLeftTurn(MinusXPosition), Path.current);
-			}
+			AddMakeLeftTurn(Theme.normal);
 		}
 		else if(type == 10)
 		{
-			choosingPath = true;
-			if(addCorrectDirection == MinusXPosition)
-			{
-				AddBlock(MakeRightTurn(AddZPosition), Path.current);
-			}
-			else if(addCorrectDirection == AddXPosition)
-			{
-				AddBlock(MakeLeftTurn(AddZPosition), Path.current);
-			}
-
-			for(int i = 0; i<4; i++)
-			{
-				AddBlock(Instantiate(flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
-			}
-			
-			leftBlockLocation = nextBlockLocation;
-			rightBlockLocation = nextBlockLocation;
-
-			AddBlock(Instantiate(turnFork, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
-			//split
-
-			//Left
-			addCorrectDirection = MinusXPosition;
-			addCorrectDirection(Path.left);
-			changeTerrainRotation();
-
-			for(int i = 0; i<3; i++)
-			{
-				AddBlock(Instantiate(flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.left);
-			}
-			AddBlock(MakeRightTurn(AddZPosition), Path.left);
-			changeTerrainRotation();
-			AddBlock(Instantiate(flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.left);
-
-			//Right
-			addCorrectDirection = AddXPosition;
-			addCorrectDirection(Path.right);
-			changeTerrainRotation();
-
-			for(int i = 0; i<3; i++)
-			{
-				AddBlock(Instantiate(flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.right);
-			}
-			AddBlock(MakeLeftTurn(AddZPosition), Path.right);
-			changeTerrainRotation();
-			AddBlock(Instantiate(flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.right);
+			AddTPath(Theme.normal);
 		}
 	}
 
@@ -264,17 +198,6 @@ public class GenerateWorld : MonoBehaviour {
 		{
 			PickBlock(GenerateRandomType());
 		}
-	}
-
-	private void RemoveAllBlocks()
-	{
-		for(int i = 0; i < generatedTerrain.transform.childCount; i++)
-		{
-			Destroy(generatedTerrain.transform.GetChild(i).gameObject);
-		}
-		//Destroy(generatedTerrain);
-		///generatedTerrain = new GameObject("Generated Terrain");
-		//generatedTerrain.AddComponent<ManageWorld>();
 	}
 
 	public void PlayerHitTurn(Path path)
@@ -368,26 +291,124 @@ public class GenerateWorld : MonoBehaviour {
 		addCorrectDirection = ZPos;
 		return Instantiate(turnRightTerrain, Vector3.zero, Quaternion.identity) as GameObject;
 	}
-	
-	public void StartNewGame()
-	{
-		RemoveAllBlocks();
-		terrainType.Clear();
-		terrain.Clear();
-		print (manageWorldScript.transform.GetChild(0).name);
-		GenerateStartingTerrain();
-		PlaceStartingTerrain();
-		manageWorldScript.SetForward();
-		addCorrectDirection = AddZPosition;
-		nextBlockLocation = new Vector2(0, -4);
-		leftBlockLocation = Vector2.zero;
-		rightBlockLocation = Vector2.zero;
-		terrainRotation = 0;
-		choosingPath = false;
-		countTerrainBlocks = 0;
-		currentNumberOfBlocks = 0;
-		generatedTerrain.transform.position = Vector3.zero;
 
+	private void AddFlatTerrain(Theme theme)
+	{
+		AddBlock(Instantiate(flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
 	}
-	
+
+	private void AddJumpObstacleTerrain(Theme theme)
+	{
+		AddBlock(Instantiate(jumpObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddJumpGapTerrain(Theme theme)
+	{
+		AddBlock(Instantiate(jumpGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddJumpLeftGapTerrain(Theme theme)
+	{
+		AddBlock(Instantiate(jumpLeftGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddJumpCenterGapTerrain(Theme theme)
+	{
+		AddBlock(Instantiate(jumpCenterGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddJumpRightGapTerrain(Theme theme)
+	{
+		AddBlock(Instantiate(jumpRightGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddDuckObstacleTerrain(Theme theme)
+	{
+		AddBlock(Instantiate(duckObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddMakeRightTurn(Theme theme)
+	{
+		if(addCorrectDirection == MinusXPosition)
+		{
+			AddBlock(MakeRightTurn(AddZPosition), Path.current);
+		}
+		else if(addCorrectDirection == AddXPosition)
+		{
+			AddBlock(MakeLeftTurn(AddZPosition), Path.current);
+		}
+		else
+		{
+			AddBlock(MakeRightTurn(AddXPosition), Path.current);
+		}
+	}
+
+	private void AddMakeLeftTurn(Theme theme)
+	{
+		if(addCorrectDirection == MinusXPosition)
+		{
+			AddBlock(MakeRightTurn(AddZPosition), Path.current);
+		}
+		else if(addCorrectDirection == AddXPosition)
+		{
+			AddBlock(MakeLeftTurn(AddZPosition), Path.current);
+		}
+		else
+		{
+			AddBlock(MakeLeftTurn(MinusXPosition), Path.current);
+		}
+	}
+
+	private void AddTPath(Theme theme)
+	{
+		choosingPath = true;
+		if(addCorrectDirection == MinusXPosition)
+		{
+			AddBlock(MakeRightTurn(AddZPosition), Path.current);
+		}
+		else if(addCorrectDirection == AddXPosition)
+		{
+			AddBlock(MakeLeftTurn(AddZPosition), Path.current);
+		}
+		
+		for(int i = 0; i<4; i++)
+		{
+			AddBlock(Instantiate(flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+		}
+		
+		leftBlockLocation = nextBlockLocation;
+		rightBlockLocation = nextBlockLocation;
+		
+		AddBlock(Instantiate(turnFork, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+		//split
+		
+		//Left
+		addCorrectDirection = MinusXPosition;
+		addCorrectDirection(Path.left);
+		changeTerrainRotation();
+		
+		for(int i = 0; i<3; i++)
+		{
+			AddBlock(Instantiate(flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.left);
+		}
+		AddBlock(MakeRightTurn(AddZPosition), Path.left);
+		changeTerrainRotation();
+		AddBlock(Instantiate(flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.left);
+		
+		//Right
+		addCorrectDirection = AddXPosition;
+		addCorrectDirection(Path.right);
+		changeTerrainRotation();
+		
+		for(int i = 0; i<3; i++)
+		{
+			AddBlock(Instantiate(flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.right);
+		}
+		AddBlock(MakeLeftTurn(AddZPosition), Path.right);
+		changeTerrainRotation();
+		AddBlock(Instantiate(flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.right);
+	}
+
+
+
 }
