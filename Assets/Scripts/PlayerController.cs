@@ -22,14 +22,21 @@ public class PlayerController : MonoBehaviour
 	private Vector3 futurePosition;
 
 	private bool collidedOnce;
+	private bool grounded;
+	private bool canTurn;
+	private bool canTurnLeft;
+	private bool canTurnRight;
 	
-	private const float startingVelocity = 30.0f;
-	private const float gravity = -90.0f;
+	private const float startingVelocity = 50.0f;
+	private const float gravity = -180.0f;
 	private const float duckingLength = 0.5f;
 	private const float BUFFER = 0.000001f;
 	private const float RUNWAY_EDGE = 4.3f;
 	private const float SKIN_WIDTH = 0.2f;
-	Vector3 currPosBasedOnState;
+	private const float PLAYER_SPEED = 5f;
+	private const float PLAYER_SPEED_FIRST = 7.5f;
+	private const float PLAYER_SPEED_SECOND = 10f;
+	Vector3 bottomOfPlayerPosition;
 	Vector3 temp;
 
 	void Start ()
@@ -40,30 +47,19 @@ public class PlayerController : MonoBehaviour
 		thirdPersonCameraScript = Camera.main.GetComponent<ThirdPersonCamera> ();
 		manageWorldScript = generatedTerrain.GetComponent<ManageWorld> ();
 		collidedOnce = false;
+		grounded = false;
+		ResetCanTurnVariables ();
 
 		Spawn ();
 	}
 
 	void Update ()
 	{
-		Vector3 futurePosBasedOnState;
-		if (Input.GetButton ("Horizontal")) {
-			transform.Translate (Vector3.right * Input.GetAxis ("Horizontal") * Time.deltaTime * 10);
+		MovePlayer ();
 
-			if (transform.position.x >= RUNWAY_EDGE) {
-				transform.position = new Vector3 (RUNWAY_EDGE, transform.position.y, transform.position.z);
-			} else if (transform.position.x <= -RUNWAY_EDGE) {
-				transform.position = new Vector3 (-RUNWAY_EDGE, transform.position.y, transform.position.z);
-			}
-			
-			if (transform.position.z >= RUNWAY_EDGE) {
-				transform.position = new Vector3 (transform.position.x, transform.position.y, RUNWAY_EDGE);
-			} else if (transform.position.z <= -RUNWAY_EDGE) {
-				transform.position = new Vector3 (transform.position.x, transform.position.y, -RUNWAY_EDGE);
-			}
-		}
+		TurnPlayer ();
 
-		if (Input.GetButton ("Jump") && !jumping && !ducking) {
+		if (Input.GetButton ("Jump") && !jumping && !ducking && grounded) {
 			velocity = startingVelocity;
 			jumping = true;
 		}
@@ -82,8 +78,6 @@ public class PlayerController : MonoBehaviour
 			transform.localScale = new Vector3 (1, 1, 1);
 		}
 
-		HandleGravity ();
-
 		collidedOnce = false;
 	}
 
@@ -97,73 +91,167 @@ public class PlayerController : MonoBehaviour
 		return jumping;
 	}
 
+	//Moves player left to right using the mouse
+	private void MovePlayer ()
+	{
+		Vector3 MouseToWorldPos = Camera.main.ScreenToWorldPoint (new Vector3 (Input.mousePosition.x, Input.mousePosition.y, 6.0f));
+		Vector3 targetPosition = transform.position;
+		
+		if (manageWorldScript.GetDirection () == ManageWorld.Direction.forward) {
+			targetPosition = new Vector3 (MouseToWorldPos.x, transform.position.y, transform.position.z);
+		} else if (manageWorldScript.GetDirection () == ManageWorld.Direction.left) {
+			targetPosition = new Vector3 (transform.position.x, transform.position.y, MouseToWorldPos.z);
+		} else if (manageWorldScript.GetDirection () == ManageWorld.Direction.right) {
+			targetPosition = new Vector3 (transform.position.x, transform.position.y, MouseToWorldPos.z);
+		}
+
+		//Makes sure that the player cannot exceed the edges 
+		if (targetPosition.x >= RUNWAY_EDGE) {
+			targetPosition = new Vector3 (RUNWAY_EDGE, transform.position.y, transform.position.z);
+		} else if (targetPosition.x <= -RUNWAY_EDGE) {
+			targetPosition = new Vector3 (-RUNWAY_EDGE, transform.position.y, transform.position.z);
+		}
+		
+		//Makes sure that the player cannot exceed the edges 
+		if (targetPosition.z >= RUNWAY_EDGE) {
+			targetPosition = new Vector3 (transform.position.x, transform.position.y, RUNWAY_EDGE);
+		} else if (targetPosition.z <= -RUNWAY_EDGE) {
+			targetPosition = new Vector3 (transform.position.x, transform.position.y, -RUNWAY_EDGE);
+		}
+
+		//If the player is close to target, the lerp will speed up giving a cleaner and faster feel
+		if (Vector3.Distance (transform.position, targetPosition) > 0.2f) {
+			transform.position = Vector3.Lerp (transform.position, targetPosition, Time.deltaTime * PLAYER_SPEED);
+		} else if (Vector3.Distance (transform.position, targetPosition) > 0.1f) {
+			transform.position = Vector3.Lerp (transform.position, targetPosition, Time.deltaTime * PLAYER_SPEED_FIRST);
+		} else {
+			transform.position = Vector3.Lerp (transform.position, targetPosition, Time.deltaTime * PLAYER_SPEED_SECOND);
+		}
+
+		HandleGravity ();
+	}
+
+	private void TurnPlayer ()
+	{
+		float axis = Input.GetAxisRaw ("Horizontal");
+		if (canTurnLeft || canTurnRight) {
+			return;
+		} else if (canTurn && Input.GetButtonDown ("Horizontal")) {
+			if (axis > 0) {
+				canTurnRight = true;
+			} else if (axis < 0) {
+				canTurnLeft = true;
+			}
+		}
+	}
+	
 	private void HandleGravity ()
 	{
+		//Kinematic Equation to calculate the future velocity/length
 		float futureVelocity = velocity + gravity * Time.deltaTime;
 		float futureLength = Time.deltaTime * (futureVelocity + velocity) / 2;
 		futureLength = Mathf.Abs (futureLength);
 		float dir = velocity > 0 ? 1 : -1;
 		velocity = futureVelocity;
-		currPosBasedOnState = new Vector3 (transform.position.x, transform.position.y - transform.localScale.y + SKIN_WIDTH, transform.position.z);
+		bottomOfPlayerPosition = new Vector3 (transform.position.x, transform.position.y - transform.localScale.y + SKIN_WIDTH, transform.position.z);
 		
-		Physics.Raycast (currPosBasedOnState, Vector3.up * dir, out hit, futureLength + SKIN_WIDTH);
-		
+		Physics.Raycast (bottomOfPlayerPosition, Vector3.up * dir, out hit, futureLength + SKIN_WIDTH);
+
+		//If dir < 0 Then it is going down else, it is going up
 		if (dir < 0) {
 			if (hit.transform && hit.transform.tag == "Ground") {
-				//print ("hit  "+ (transform.position.y-transform.localScale.y));
 				transform.position = new Vector3 (transform.position.x, hit.point.y + transform.localScale.y, transform.position.z);
 				velocity = 0;
 				jumping = false;
+				grounded = true;
 			} else {
 				transform.position = new Vector3 (transform.position.x, transform.position.y + (futureLength * dir), transform.position.z);
+				grounded = false;
 			}
 		} else {
 			transform.position = new Vector3 (transform.position.x, transform.position.y + futureLength, transform.position.z);
+			grounded = false;
 		}
 	}
 
 	void OnTriggerEnter (Collider col)
 	{
-		print ("collision " + col.transform.name);
-		if (col.transform.tag == "Death") {
-			Application.LoadLevel (0);
+		if (col.transform.tag == "TurningLeftPress" || col.transform.tag == "TurningRightPress" || col.transform.tag == "TurningTPress") {
+			canTurn = true;
 		}
+
+		//If the placer enters an obstacle it will restart the level
+		if (col.transform.tag == "Death") {
+			Death ();
+		}
+		//If it hits a left or right turn it changes the players and cameras rotation and position then deletes the trigger
 		if (!collidedOnce) {
 			if (col.transform.tag == "TurningRight") {
-				if (col.transform.parent.tag == "TurningFork") {
-					generateWorldScript.PlayerChoseTTurn (GenerateWorld.Path.right);
-				}
 
-				manageWorldScript.TurnRight ();
-				manageWorldScript.RoundTransformPosition (col);
-				transform.rotation = Quaternion.Euler (transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y + 90, transform.rotation.eulerAngles.z);
-				if (manageWorldScript.GetDirection () == ManageWorld.Direction.forward) {
-					transform.position = new Vector3 (transform.position.z, transform.position.y, transform.position.z);
-				} else if (manageWorldScript.GetDirection () == ManageWorld.Direction.right) {
-					transform.position = new Vector3 (transform.position.x, transform.position.y, -(transform.position.x));
+				if (canTurnRight) {
+					if (col.transform.parent.tag == "TurningFork") {
+						generateWorldScript.PlayerChoseTTurn (GenerateWorld.Path.right);
+					}
+
+					manageWorldScript.TurnRight ();
+					manageWorldScript.RoundTransformPosition (col);
+					transform.rotation = Quaternion.Euler (transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y + 90, transform.rotation.eulerAngles.z);
+					if (manageWorldScript.GetDirection () == ManageWorld.Direction.forward) {
+						transform.position = new Vector3 (transform.position.z, transform.position.y, transform.position.z);
+					} else if (manageWorldScript.GetDirection () == ManageWorld.Direction.right) {
+						transform.position = new Vector3 (transform.position.x, transform.position.y, -(transform.position.x));
+					}
+					thirdPersonCameraScript.Turning ();
+					collidedOnce = true;
+					ResetCanTurnVariables ();
+					Destroy (col.transform.parent.gameObject);
+				} else {
+					Death ();
 				}
-				thirdPersonCameraScript.Turning ();
-				collidedOnce = true;
-				Destroy (col.transform.parent.gameObject);
 			} else if (col.transform.tag == "TurningLeft") {
-				if (col.transform.parent.tag == "TurningFork") {
-					generateWorldScript.PlayerChoseTTurn (GenerateWorld.Path.left);
-				}
 
-				manageWorldScript.TurnLeft ();
-				manageWorldScript.RoundTransformPosition (col);
-				transform.rotation = Quaternion.Euler (transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y - 90, transform.rotation.eulerAngles.z);
-				if (manageWorldScript.GetDirection () == ManageWorld.Direction.forward) {
-					transform.position = new Vector3 (-(transform.position.z), transform.position.y, transform.position.z);
-				} else if (manageWorldScript.GetDirection () == ManageWorld.Direction.left) {
-					transform.position = new Vector3 (transform.position.x, transform.position.y, transform.position.x);
+				if (canTurnLeft) {
+					if (col.transform.parent.tag == "TurningFork") {
+						generateWorldScript.PlayerChoseTTurn (GenerateWorld.Path.left);
+					}
+
+					manageWorldScript.TurnLeft ();
+					manageWorldScript.RoundTransformPosition (col);
+					transform.rotation = Quaternion.Euler (transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y - 90, transform.rotation.eulerAngles.z);
+					if (manageWorldScript.GetDirection () == ManageWorld.Direction.forward) {
+						transform.position = new Vector3 (-(transform.position.z), transform.position.y, transform.position.z);
+					} else if (manageWorldScript.GetDirection () == ManageWorld.Direction.left) {
+						transform.position = new Vector3 (transform.position.x, transform.position.y, transform.position.x);
+					}
+					thirdPersonCameraScript.Turning ();
+					collidedOnce = true;
+					ResetCanTurnVariables ();
+					Destroy (col.transform.parent.gameObject);
+				} else {
+					Death ();
 				}
-				thirdPersonCameraScript.Turning ();
-				collidedOnce = true;
-				Destroy (col.transform.parent.gameObject);
 			}
 
 		}
+	}
+
+	void OnTriggerExit (Collider col)
+	{
+		if (col.transform.tag == "TurningLeftPress" || col.transform.tag == "TurningRightPress" || col.transform.tag == "TurningTPress") {
+			canTurn = false;
+		}
+	}
+
+	private void ResetCanTurnVariables ()
+	{
+		canTurn = false;
+		canTurnLeft = false;
+		canTurnRight = false;
+	}
+
+	void Death ()
+	{
+		Application.LoadLevel (0);
 	}
 
 	void Spawn ()
