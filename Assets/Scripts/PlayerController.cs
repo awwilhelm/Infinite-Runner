@@ -26,6 +26,7 @@ public class PlayerController : MonoBehaviour
 	private bool canTurn;
 	private bool canTurnLeft;
 	private bool canTurnRight;
+	private int numberOfTurnTrigIn;
 	
 	private const float startingVelocity = 50.0f;
 	private const float gravity = -180.0f;
@@ -48,6 +49,7 @@ public class PlayerController : MonoBehaviour
 		manageWorldScript = generatedTerrain.GetComponent<ManageWorld> ();
 		collidedOnce = false;
 		grounded = false;
+		numberOfTurnTrigIn = 0;
 		ResetCanTurnVariables ();
 
 		Spawn ();
@@ -178,6 +180,7 @@ public class PlayerController : MonoBehaviour
 	{
 		if (col.transform.tag == "TurningLeftPress" || col.transform.tag == "TurningRightPress" || col.transform.tag == "TurningTPress") {
 			canTurn = true;
+			numberOfTurnTrigIn++;
 		}
 
 		//If the placer enters an obstacle it will restart the level
@@ -205,6 +208,8 @@ public class PlayerController : MonoBehaviour
 					collidedOnce = true;
 					ResetCanTurnVariables ();
 					Destroy (col.transform.parent.gameObject);
+				} else if (canTurnLeft) {
+					Destroy (col.transform.gameObject);
 				} else {
 					Death ();
 				}
@@ -227,6 +232,8 @@ public class PlayerController : MonoBehaviour
 					collidedOnce = true;
 					ResetCanTurnVariables ();
 					Destroy (col.transform.parent.gameObject);
+				} else if (canTurnRight) {
+					Destroy (col.transform.gameObject);
 				} else {
 					Death ();
 				}
@@ -238,7 +245,10 @@ public class PlayerController : MonoBehaviour
 	void OnTriggerExit (Collider col)
 	{
 		if (col.transform.tag == "TurningLeftPress" || col.transform.tag == "TurningRightPress" || col.transform.tag == "TurningTPress") {
-			canTurn = false;
+			numberOfTurnTrigIn--;
+			if (numberOfTurnTrigIn < 1) {
+				canTurn = false;
+			}
 		}
 	}
 
