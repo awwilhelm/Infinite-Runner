@@ -114,7 +114,7 @@ public class PlayerController : MonoBehaviour
 			targetPosition = new Vector3 (-RUNWAY_EDGE, transform.position.y, transform.position.z);
 		}
 		
-		//Makes sure that the player cannot exceed the edges 
+		//Makes sure that the player cannot exceed the edges s
 		if (targetPosition.z >= RUNWAY_EDGE) {
 			targetPosition = new Vector3 (transform.position.x, transform.position.y, RUNWAY_EDGE);
 		} else if (targetPosition.z <= -RUNWAY_EDGE) {

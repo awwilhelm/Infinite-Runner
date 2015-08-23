@@ -9,9 +9,11 @@ public class GenerateWorld : MonoBehaviour
 	public GameObject flatTerrain;
 	public GameObject jumpObstacleTerrain;
 	public GameObject jumpGapTerrain;
-	public GameObject jumpLeftGapTerrain;
-	public GameObject jumpCenterGapTerrain;
-	public GameObject jumpRightGapTerrain;
+	public GameObject jumpLeftObstacleTerrain;
+	public GameObject jumpCenterObstacleTerrain;
+	public GameObject jumpRightObstacleTerrain;
+	public GameObject jumpLeftObstacleSlant;
+	public GameObject jumpRightObstacleSlant;
 	public GameObject duckObstacleTerrain;
 	public GameObject turnRightTerrain;
 	public GameObject turnLeftTerrain;
@@ -149,13 +151,17 @@ public class GenerateWorld : MonoBehaviour
 		} else if (type == 3) {
 			AddJumpGapTerrain (Theme.normal);
 		} else if (type == 4) {
-			AddJumpLeftGapTerrain (Theme.normal);
+			AddJumpLeftObstacleTerrain (Theme.normal);
 		} else if (type == 5) {
-			AddJumpCenterGapTerrain (Theme.normal);
+			AddJumpCenterObstacleTerrain (Theme.normal);
 		} else if (type == 6) {
-			AddJumpRightGapTerrain (Theme.normal);
+			AddJumpRightObstacleTerrain (Theme.normal);
 		} else if (type == 7) {
 			AddDuckObstacleTerrain (Theme.normal);
+		} else if (type == 10) {
+			AddJumpLeftSlant (Theme.normal);
+		} else if (type == 11) {
+			AddJumpRightSlant (Theme.normal);
 		} else if (type == 8) { //Right turn
 			AddMakeTurn (Theme.normal);
 		} else if (type == 9) {
@@ -302,19 +308,29 @@ public class GenerateWorld : MonoBehaviour
 		AddBlock (Instantiate (jumpGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
 	}
 
-	private void AddJumpLeftGapTerrain (Theme theme)
+	private void AddJumpLeftObstacleTerrain (Theme theme)
 	{
-		AddBlock (Instantiate (jumpLeftGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+		AddBlock (Instantiate (jumpLeftObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
 	}
 
-	private void AddJumpCenterGapTerrain (Theme theme)
+	private void AddJumpLeftSlant (Theme theme)
 	{
-		AddBlock (Instantiate (jumpCenterGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+		AddBlock (Instantiate (jumpLeftObstacleSlant, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
 	}
 
-	private void AddJumpRightGapTerrain (Theme theme)
+	private void AddJumpCenterObstacleTerrain (Theme theme)
 	{
-		AddBlock (Instantiate (jumpRightGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+		AddBlock (Instantiate (jumpCenterObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddJumpRightObstacleTerrain (Theme theme)
+	{
+		AddBlock (Instantiate (jumpRightObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddJumpRightSlant (Theme theme)
+	{
+		AddBlock (Instantiate (jumpRightObstacleSlant, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
 	}
 
 	private void AddDuckObstacleTerrain (Theme theme)
