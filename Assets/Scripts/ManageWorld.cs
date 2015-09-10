@@ -5,6 +5,8 @@ public class ManageWorld : MonoBehaviour
 {
 
 	private GenerateWorld generateWorldScript;
+	private ScoreKeeping scoreKeepingScript;
+	private Environment currentSkyBox;
 	
 	private const float FORWARD_SPEED = 23.0f;
 	private const int REGENERATE_LIMIT = 20;
@@ -15,6 +17,20 @@ public class ManageWorld : MonoBehaviour
 		right,
 		left
 	}
+	
+	public enum Environment
+	{
+		ocean,
+		atmosphere,
+		cloud,
+		rain,
+		snow,
+		runoff,
+		fog,
+		lake,
+		groundwater,
+		plantUptake
+	}
 
 	private Direction direction;
 
@@ -22,6 +38,7 @@ public class ManageWorld : MonoBehaviour
 	void Start ()
 	{
 		generateWorldScript = GameObject.Find ("World").GetComponent<GenerateWorld> ();
+		scoreKeepingScript = GameObject.Find ("World").GetComponent<ScoreKeeping> ();
 		transform.position = new Vector3 (0, 0, REGENERATE_LIMIT);
 		direction = Direction.forward;
 	}
@@ -99,5 +116,15 @@ public class ManageWorld : MonoBehaviour
 	private void StepLeft ()
 	{
 		transform.position = new Vector3 (transform.position.x + Time.deltaTime * FORWARD_SPEED, transform.position.y, transform.position.z);
+	}
+	
+	public void ChangeSkyBox (ManageWorld.Environment newEnvironment)
+	{
+		RenderSettings.skybox = generateWorldScript.GetSkyBoxMaterial (newEnvironment);
+		currentSkyBox = newEnvironment;
+		
+		generateWorldScript.SetCurrentEnvironment (currentSkyBox);
+		
+		scoreKeepingScript.SetSkyBoxEnvironment (currentSkyBox);
 	}
 }

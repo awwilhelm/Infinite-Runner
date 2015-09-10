@@ -4,7 +4,6 @@ using System.Collections.Generic;
 
 public class GenerateWorld : MonoBehaviour
 {
-
 	public GameObject player;
 	public GameObject flatTerrain;
 	public GameObject jumpObstacleTerrain;
@@ -18,8 +17,22 @@ public class GenerateWorld : MonoBehaviour
 	public GameObject turnRightTerrain;
 	public GameObject turnLeftTerrain;
 	public GameObject turnFork;
+	
+	public Material oceanSkyBox;
+	public Material atmosphereSkyBox;
+	public Material cloudSkyBox;
+	public Material rainSkyBox;
+	public Material snowSkyBox;
+	public Material runoffSkyBox;
+	public Material fogSkyBox;
+	public Material lakeSkyBox;
+	public Material groundwaterSkyBox;
+	public Material plantUptakeSkyBox;
+	
+	public GameObject coin;
 
 	private ManageWorld manageWorldScript;
+	private ScoreKeeping scoreKeepingScript;
 
 	private GameObject generatedTerrain;
 	private ArrayList terrainType = new ArrayList ();
@@ -33,10 +46,14 @@ public class GenerateWorld : MonoBehaviour
 	private int numberOfBlocksSinceLastTurn;
 
 	private delegate void AddCorrectDirection (Path path);
-	private AddCorrectDirection addCorrectDirection;
+	private AddCorrectDirection addCorrectDirection;	
+	
 	private bool choosingPath = false;
 	private int blocksSinceLastObstacle;
 	private float obstaclePercentage;
+	private ManageWorld.Environment currentEnvironment;
+	private ManageWorld.Environment nextRightEnvironment;
+	private ManageWorld.Environment nextLeftEnvironment;
 
 	private const int NUMBER_OF_BLOCKS = 20;
 	private const int MIN_RUN_SPACE = 5;
@@ -49,12 +66,6 @@ public class GenerateWorld : MonoBehaviour
 		right,
 		left
 	}
-
-	private enum Theme
-	{
-		normal,
-		other
-	}
 	
 	//Adds Generated terrain Gameobject to hold all of the terrain
 	void Awake ()
@@ -63,11 +74,13 @@ public class GenerateWorld : MonoBehaviour
 		generatedTerrain.AddComponent<ManageWorld> ();
 
 		generatedTerrain.transform.position = Vector3.zero;
+		scoreKeepingScript = GetComponent<ScoreKeeping> ();
 	}
 
 	//Sets everything up
 	void Start ()
 	{
+		RenderSettings.skybox = oceanSkyBox;
 		manageWorldScript = generatedTerrain.GetComponent<ManageWorld> ();
 		manageWorldScript.SetForward ();
 		terrain = new Queue<GameObject> ();
@@ -81,10 +94,13 @@ public class GenerateWorld : MonoBehaviour
 		blocksSinceLastObstacle = 0;
 		numberOfBlocksSinceLastTurn = 0;
 		obstaclePercentage = STARTING_OBSTACLE_PERCENTAGE;
+		currentEnvironment = ManageWorld.Environment.ocean;
+		
 		GenerateStartingTerrain ();
 		PlaceStartingTerrain ();
+		SetEnvironmentForT ();
 	}
-
+	
 	//Generates terrain until it meets the NUMBER_OF_BLOCKS requriement
 	private void GenerateStartingTerrain ()
 	{
@@ -115,7 +131,7 @@ public class GenerateWorld : MonoBehaviour
 				numberOfBlocksSinceLastTurn = 0;
 				blocksSinceLastObstacle = 0;
 				nextBlock = 8;
-			} else if (Random.Range (0, 30) < 1) {
+			} else if (Random.Range (0, 30) < 6) {
 				nextBlock = 9;
 			} else {
 				if (Random.Range (0, 10) < obstaclePercentage) {
@@ -145,27 +161,27 @@ public class GenerateWorld : MonoBehaviour
 	private void PickBlock (int type)
 	{
 		if (type == 1) {
-			AddFlatTerrain (Theme.normal);
+			AddFlatTerrain (ManageWorld.Environment.ocean);
 		} else if (type == 2) {
-			AddJumpObstacleTerrain (Theme.normal);
+			AddJumpObstacleTerrain (ManageWorld.Environment.ocean);
 		} else if (type == 3) {
-			AddJumpGapTerrain (Theme.normal);
+			AddJumpGapTerrain (ManageWorld.Environment.ocean);
 		} else if (type == 4) {
-			AddJumpLeftObstacleTerrain (Theme.normal);
+			AddJumpLeftObstacleTerrain (ManageWorld.Environment.ocean);
 		} else if (type == 5) {
-			AddJumpCenterObstacleTerrain (Theme.normal);
+			AddJumpCenterObstacleTerrain (ManageWorld.Environment.ocean);
 		} else if (type == 6) {
-			AddJumpRightObstacleTerrain (Theme.normal);
+			AddJumpRightObstacleTerrain (ManageWorld.Environment.ocean);
 		} else if (type == 7) {
-			AddDuckObstacleTerrain (Theme.normal);
+			AddDuckObstacleTerrain (ManageWorld.Environment.ocean);
 		} else if (type == 10) {
-			AddJumpLeftSlant (Theme.normal);
+			AddJumpLeftSlant (ManageWorld.Environment.ocean);
 		} else if (type == 11) {
-			AddJumpRightSlant (Theme.normal);
-		} else if (type == 8) { //Right turn
-			AddMakeTurn (Theme.normal);
+			AddJumpRightSlant (ManageWorld.Environment.ocean);
+		} else if (type == 8) {
+			AddMakeTurn (ManageWorld.Environment.ocean);
 		} else if (type == 9) {
-			AddTPath (Theme.normal);
+			AddTPath (ManageWorld.Environment.ocean);
 		}
 	}
 
@@ -187,10 +203,11 @@ public class GenerateWorld : MonoBehaviour
 		init.transform.rotation = Quaternion.Euler (0, terrainRotation, 0);
 
 		changeTerrainRotation ();
-
+		
+		string name = init.transform.name.Replace ("(Clone)", "");
 		init.transform.parent = generatedTerrain.transform;
 		init.transform.localPosition = new Vector3 (tempNextLocation.x * 10, -0.5f, tempNextLocation.y * 10);
-		init.name = name + countTerrainBlocks;
+		init.name = name + " " + countTerrainBlocks;
 		countTerrainBlocks++;
 		currentNumberOfBlocks++;
 		addCorrectDirection (path);
@@ -279,66 +296,86 @@ public class GenerateWorld : MonoBehaviour
 		}
 	}
 
+
+	//INISTANTIATING ALL THE BLOCKS
+
+
+	private void AddFlatTerrain (ManageWorld.Environment theme)
+	{
+		GameObject straightAway = Instantiate (flatTerrain, Vector3.zero, Quaternion.identity) as GameObject;
+		
+		if (Random.Range (0, 10) < 4) {
+			GameObject coins;
+			int lane = Random.Range (-1, 2);
+			int type = Random.Range (0, 3);
+			for (int i = -1; i < 2; i++) {
+				coins = Instantiate (coin, Vector3.zero, Quaternion.identity) as GameObject;
+				coins.transform.position = new Vector3 (2.5f * lane, straightAway.transform.position.y + 1.5f, 3 * i);
+				PickUp pickUpScript = coins.GetComponent<PickUp> ();
+				pickUpScript.PickUpDefinition ((PickUp.PickUpType)type);
+				
+				coins.transform.parent = straightAway.transform;
+			}
+		}
+		
+		AddBlock (straightAway, Path.current);
+	}
+
+	private void AddJumpObstacleTerrain (ManageWorld.Environment theme)
+	{
+		AddBlock (Instantiate (jumpObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddJumpGapTerrain (ManageWorld.Environment theme)
+	{
+		AddBlock (Instantiate (jumpGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddJumpLeftObstacleTerrain (ManageWorld.Environment theme)
+	{
+		AddBlock (Instantiate (jumpLeftObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddJumpLeftSlant (ManageWorld.Environment theme)
+	{
+		AddBlock (Instantiate (jumpLeftObstacleSlant, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddJumpCenterObstacleTerrain (ManageWorld.Environment theme)
+	{
+		AddBlock (Instantiate (jumpCenterObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddJumpRightObstacleTerrain (ManageWorld.Environment theme)
+	{
+		AddBlock (Instantiate (jumpRightObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddJumpRightSlant (ManageWorld.Environment theme)
+	{
+		AddBlock (Instantiate (jumpRightObstacleSlant, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
+	private void AddDuckObstacleTerrain (ManageWorld.Environment theme)
+	{
+		AddBlock (Instantiate (duckObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
+	}
+
 	//Generates left turn
 	private GameObject MakeLeftTurn (AddCorrectDirection XPos)
 	{
 		addCorrectDirection = XPos;
 		return Instantiate (turnLeftTerrain, Vector3.zero, Quaternion.identity) as GameObject;
 	}
-
+	
 	//Generates right turn
 	private GameObject MakeRightTurn (AddCorrectDirection ZPos)
 	{
 		addCorrectDirection = ZPos;
 		return Instantiate (turnRightTerrain, Vector3.zero, Quaternion.identity) as GameObject;
 	}
-
-	private void AddFlatTerrain (Theme theme)
-	{
-		AddBlock (Instantiate (flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
-	}
-
-	private void AddJumpObstacleTerrain (Theme theme)
-	{
-		AddBlock (Instantiate (jumpObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
-	}
-
-	private void AddJumpGapTerrain (Theme theme)
-	{
-		AddBlock (Instantiate (jumpGapTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
-	}
-
-	private void AddJumpLeftObstacleTerrain (Theme theme)
-	{
-		AddBlock (Instantiate (jumpLeftObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
-	}
-
-	private void AddJumpLeftSlant (Theme theme)
-	{
-		AddBlock (Instantiate (jumpLeftObstacleSlant, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
-	}
-
-	private void AddJumpCenterObstacleTerrain (Theme theme)
-	{
-		AddBlock (Instantiate (jumpCenterObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
-	}
-
-	private void AddJumpRightObstacleTerrain (Theme theme)
-	{
-		AddBlock (Instantiate (jumpRightObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
-	}
-
-	private void AddJumpRightSlant (Theme theme)
-	{
-		AddBlock (Instantiate (jumpRightObstacleSlant, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
-	}
-
-	private void AddDuckObstacleTerrain (Theme theme)
-	{
-		AddBlock (Instantiate (duckObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
-	}
-
-	private void AddMakeTurn (Theme theme)
+	
+	private void AddMakeTurn (ManageWorld.Environment theme)
 	{
 		if (addCorrectDirection == MinusXPosition) {
 			AddBlock (MakeRightTurn (AddZPosition), Path.current);
@@ -355,7 +392,7 @@ public class GenerateWorld : MonoBehaviour
 	}
 
 	//Adds a T path to change theme
-	private void AddTPath (Theme theme)
+	private void AddTPath (ManageWorld.Environment theme)
 	{
 		choosingPath = true;
 
@@ -403,7 +440,172 @@ public class GenerateWorld : MonoBehaviour
 		changeTerrainRotation ();
 		AddBlock (Instantiate (flatTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.right);
 	}
+	
+	public Material GetSkyBoxMaterial (ManageWorld.Environment skybox)
+	{
+		if (skybox == ManageWorld.Environment.ocean) {
+			return oceanSkyBox;
+		} else if (skybox == ManageWorld.Environment.atmosphere) {
+			return atmosphereSkyBox;
+		} else if (skybox == ManageWorld.Environment.cloud) {
+			return cloudSkyBox;
+		} else if (skybox == ManageWorld.Environment.rain) {
+			return rainSkyBox;
+		} else if (skybox == ManageWorld.Environment.snow) {
+			return snowSkyBox;
+		} else if (skybox == ManageWorld.Environment.runoff) {
+			return runoffSkyBox;
+		} else if (skybox == ManageWorld.Environment.fog) {
+			return fogSkyBox;
+		} else if (skybox == ManageWorld.Environment.lake) {
+			return lakeSkyBox;
+		} else if (skybox == ManageWorld.Environment.groundwater) {
+			return groundwaterSkyBox;
+		} else if (skybox == ManageWorld.Environment.plantUptake) {
+			return plantUptakeSkyBox;
+		}
+		return oceanSkyBox;
+	}
+	
+	public void SetEnvironmentForT ()
+	{
+		int rand = -1;
+		if (currentEnvironment != ManageWorld.Environment.rain && currentEnvironment != ManageWorld.Environment.runoff && currentEnvironment != ManageWorld.Environment.groundwater) {
+			rand = Random.Range (0, 2);
+		}
+	
+		switch (currentEnvironment) {
+		case ManageWorld.Environment.ocean:
+			nextLeftEnvironment = rand == 0 ? ManageWorld.Environment.atmosphere : ManageWorld.Environment.groundwater;
+			nextRightEnvironment = rand == 1 ? ManageWorld.Environment.atmosphere : ManageWorld.Environment.groundwater;
+			break;
+		case ManageWorld.Environment.atmosphere:
+			nextLeftEnvironment = rand == 0 ? ManageWorld.Environment.cloud : ManageWorld.Environment.fog;
+			nextRightEnvironment = rand == 1 ? ManageWorld.Environment.cloud : ManageWorld.Environment.fog;
+			break;
+		case ManageWorld.Environment.cloud:
+			nextLeftEnvironment = rand == 0 ? ManageWorld.Environment.rain : ManageWorld.Environment.snow;
+			nextRightEnvironment = rand == 1 ? ManageWorld.Environment.rain : ManageWorld.Environment.snow;
+			break;
+		case ManageWorld.Environment.rain:
+			SetNextRainEnvironment ();
+			break;
+		case ManageWorld.Environment.snow:
+			nextLeftEnvironment = rand == 0 ? ManageWorld.Environment.atmosphere : ManageWorld.Environment.runoff;
+			nextRightEnvironment = rand == 1 ? ManageWorld.Environment.atmosphere : ManageWorld.Environment.runoff;
+			break;
+		case ManageWorld.Environment.runoff:
+			SetNextRunoffEnvironment ();
+			break;
+		case ManageWorld.Environment.fog:
+			nextLeftEnvironment = rand == 0 ? ManageWorld.Environment.atmosphere : ManageWorld.Environment.runoff;
+			nextRightEnvironment = rand == 1 ? ManageWorld.Environment.atmosphere : ManageWorld.Environment.runoff;
+			break;
+		case ManageWorld.Environment.lake:
+			nextLeftEnvironment = rand == 0 ? ManageWorld.Environment.atmosphere : ManageWorld.Environment.groundwater;
+			nextRightEnvironment = rand == 1 ? ManageWorld.Environment.atmosphere : ManageWorld.Environment.groundwater;
+			break;
+		case ManageWorld.Environment.groundwater:
+			SetNextGroundwaterEnvironment ();
+			break;
+		case ManageWorld.Environment.plantUptake:
+			nextLeftEnvironment = rand == 0 ? ManageWorld.Environment.atmosphere : ManageWorld.Environment.groundwater;
+			nextRightEnvironment = rand == 1 ? ManageWorld.Environment.atmosphere : ManageWorld.Environment.groundwater;
+			break;
+		}
+		scoreKeepingScript.SetSkyBoxEnvironment (currentEnvironment);
 
-
-
+	}
+	
+	private void SetNextRainEnvironment ()
+	{
+		int rand = Random.Range (0, 3);
+		if (rand == 0) {
+			nextLeftEnvironment = ManageWorld.Environment.runoff;
+		} else if (rand == 1) {
+			nextLeftEnvironment = ManageWorld.Environment.ocean;
+		} else if (rand == 2) {
+			nextLeftEnvironment = ManageWorld.Environment.lake;
+		}
+		
+		nextRightEnvironment = nextLeftEnvironment;
+		while (nextRightEnvironment == nextLeftEnvironment) {
+			rand = Random.Range (0, 3);
+			if (rand == 0) {
+				nextRightEnvironment = ManageWorld.Environment.runoff;
+			} else if (rand == 1) {
+				nextRightEnvironment = ManageWorld.Environment.ocean;
+			} else if (rand == 2) {
+				nextRightEnvironment = ManageWorld.Environment.lake;
+			}
+		}
+	}
+	
+	private void SetNextRunoffEnvironment ()
+	{
+		int rand = Random.Range (0, 4);
+		if (rand == 0) {
+			nextLeftEnvironment = ManageWorld.Environment.atmosphere;
+		} else if (rand == 1) {
+			nextLeftEnvironment = ManageWorld.Environment.groundwater;
+		} else if (rand == 2) {
+			nextLeftEnvironment = ManageWorld.Environment.ocean;
+		} else if (rand == 3) {
+			nextLeftEnvironment = ManageWorld.Environment.lake;
+		}
+		
+		nextRightEnvironment = nextLeftEnvironment;
+		while (nextRightEnvironment == nextLeftEnvironment) {
+			rand = Random.Range (0, 4);
+			if (rand == 0) {
+				nextLeftEnvironment = ManageWorld.Environment.atmosphere;
+			} else if (rand == 1) {
+				nextLeftEnvironment = ManageWorld.Environment.groundwater;
+			} else if (rand == 2) {
+				nextLeftEnvironment = ManageWorld.Environment.ocean;
+			} else if (rand == 3) {
+				nextLeftEnvironment = ManageWorld.Environment.lake;
+			}
+		}
+	}
+	
+	private void SetNextGroundwaterEnvironment ()
+	{
+		int rand = Random.Range (0, 3);
+		if (rand == 0) {
+			nextLeftEnvironment = ManageWorld.Environment.plantUptake;
+		} else if (rand == 1) {
+			nextLeftEnvironment = ManageWorld.Environment.ocean;
+		} else if (rand == 2) {
+			nextLeftEnvironment = ManageWorld.Environment.runoff;
+		}
+		
+		nextRightEnvironment = nextLeftEnvironment;
+		while (nextRightEnvironment == nextLeftEnvironment) {
+			rand = Random.Range (0, 3);
+			if (rand == 0) {
+				nextLeftEnvironment = ManageWorld.Environment.plantUptake;
+			} else if (rand == 1) {
+				nextLeftEnvironment = ManageWorld.Environment.ocean;
+			} else if (rand == 2) {
+				nextLeftEnvironment = ManageWorld.Environment.runoff;
+			}
+		}
+	}
+	
+	public void SetCurrentEnvironment (ManageWorld.Environment environment)
+	{
+		currentEnvironment = environment;
+	}
+	
+	public ManageWorld.Environment GetNextLeftEnvironment ()
+	{
+		return nextLeftEnvironment;
+	}
+	
+	public ManageWorld.Environment GetNextRightEnvironment ()
+	{
+		return nextRightEnvironment;
+	}
+	
 }

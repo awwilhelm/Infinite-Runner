@@ -11,6 +11,7 @@ public class PlayerController : MonoBehaviour
 	private GenerateWorld generateWorldScript;
 	private ManageWorld manageWorldScript;
 	private ThirdPersonCamera thirdPersonCameraScript;
+	private PickUpManager pickUpManagerScript;
 
 	private float velocity;
 	private bool jumping;
@@ -47,6 +48,7 @@ public class PlayerController : MonoBehaviour
 		generateWorldScript = GameObject.Find ("World").GetComponent<GenerateWorld> ();
 		thirdPersonCameraScript = Camera.main.GetComponent<ThirdPersonCamera> ();
 		manageWorldScript = generatedTerrain.GetComponent<ManageWorld> ();
+		pickUpManagerScript = GameObject.Find ("World").GetComponent<PickUpManager> ();
 		collidedOnce = false;
 		grounded = false;
 		numberOfTurnTrigIn = 0;
@@ -182,6 +184,11 @@ public class PlayerController : MonoBehaviour
 			canTurn = true;
 			numberOfTurnTrigIn++;
 		}
+		
+		if (col.transform.tag == "Coin") {
+			GameObject.Find ("World").GetComponent<ScoreKeeping> ().AddToScore (col.transform.parent.GetComponent<PickUp> ().GetPoints ());
+			Destroy (col.transform.parent.gameObject);
+		}
 
 		//If the placer enters an obstacle it will restart the level
 		if (col.transform.tag == "Death") {
@@ -194,6 +201,8 @@ public class PlayerController : MonoBehaviour
 				if (canTurnRight) {
 					if (col.transform.parent.tag == "TurningFork") {
 						generateWorldScript.PlayerChoseTTurn (GenerateWorld.Path.right);
+						manageWorldScript.ChangeSkyBox (generateWorldScript.GetNextRightEnvironment ());
+						generateWorldScript.SetEnvironmentForT ();
 					}
 
 					manageWorldScript.TurnRight ();
@@ -218,8 +227,11 @@ public class PlayerController : MonoBehaviour
 				if (canTurnLeft) {
 					if (col.transform.parent.tag == "TurningFork") {
 						generateWorldScript.PlayerChoseTTurn (GenerateWorld.Path.left);
+						manageWorldScript.ChangeSkyBox (generateWorldScript.GetNextLeftEnvironment ());
+						generateWorldScript.SetEnvironmentForT ();
+						
 					}
-
+					
 					manageWorldScript.TurnLeft ();
 					manageWorldScript.RoundTransformPosition (col);
 					transform.rotation = Quaternion.Euler (transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y - 90, transform.rotation.eulerAngles.z);
