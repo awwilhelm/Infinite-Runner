@@ -8,6 +8,7 @@ public class ScoreKeeping : MonoBehaviour
 {
 	
 	public Text textScore;
+	public Text deathScore;
 	public Text currentEnvironment;
 	public Text nextLeftEnvironment;
 	public Text nextRightEnvironment;
@@ -43,6 +44,11 @@ public class ScoreKeeping : MonoBehaviour
 	public int GetScore ()
 	{
 		return score;
+	}
+	
+	public void SetDeathScore ()
+	{
+		deathScore.text = "Score: " + score;
 	}
 	
 	public void SetSkyBoxEnvironment (ManageWorld.Environment skybox)

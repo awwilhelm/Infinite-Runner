@@ -4,6 +4,8 @@ using System.Collections;
 public class PlayerController : MonoBehaviour
 {
 
+	public Canvas endGameCanvas;
+	public GameObject scoreBoard;
 	public LayerMask playerMask;
 	private GameObject spawnPoint;
 	private GameObject generatedTerrain;
@@ -11,7 +13,7 @@ public class PlayerController : MonoBehaviour
 	private GenerateWorld generateWorldScript;
 	private ManageWorld manageWorldScript;
 	private ThirdPersonCamera thirdPersonCameraScript;
-	private PickUpManager pickUpManagerScript;
+	private ScoreKeeping scoreKeepingScript;
 
 	private float velocity;
 	private bool jumping;
@@ -48,7 +50,7 @@ public class PlayerController : MonoBehaviour
 		generateWorldScript = GameObject.Find ("World").GetComponent<GenerateWorld> ();
 		thirdPersonCameraScript = Camera.main.GetComponent<ThirdPersonCamera> ();
 		manageWorldScript = generatedTerrain.GetComponent<ManageWorld> ();
-		pickUpManagerScript = GameObject.Find ("World").GetComponent<PickUpManager> ();
+		scoreKeepingScript = GameObject.Find ("World").GetComponent<ScoreKeeping> ();
 		collidedOnce = false;
 		grounded = false;
 		numberOfTurnTrigIn = 0;
@@ -271,8 +273,16 @@ public class PlayerController : MonoBehaviour
 		canTurnRight = false;
 	}
 
-	void Death ()
+	private void Death ()
 	{
+		scoreKeepingScript.SetDeathScore ();
+		Time.timeScale = 0;
+		endGameCanvas.gameObject.SetActive (true);
+	}
+	
+	public void RestartLevel ()
+	{
+		Time.timeScale = 1;
 		Application.LoadLevel (0);
 	}
 

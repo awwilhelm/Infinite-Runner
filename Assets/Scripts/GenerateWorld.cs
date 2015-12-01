@@ -11,8 +11,6 @@ public class GenerateWorld : MonoBehaviour
 	public GameObject jumpLeftObstacleTerrain;
 	public GameObject jumpCenterObstacleTerrain;
 	public GameObject jumpRightObstacleTerrain;
-	public GameObject jumpLeftObstacleSlant;
-	public GameObject jumpRightObstacleSlant;
 	public GameObject duckObstacleTerrain;
 	public GameObject turnRightTerrain;
 	public GameObject turnLeftTerrain;
@@ -28,6 +26,14 @@ public class GenerateWorld : MonoBehaviour
 	public Material lakeSkyBox;
 	public Material groundwaterSkyBox;
 	public Material plantUptakeSkyBox;
+
+    public Material tempSkybox1;
+    public Material tempSkybox2;
+    public Material tempSkybox3;
+
+    public GameObject snowParticle;
+
+    public Material defaultSkyBox;
 	
 	public GameObject coin;
 
@@ -55,6 +61,8 @@ public class GenerateWorld : MonoBehaviour
 	private ManageWorld.Environment nextRightEnvironment;
 	private ManageWorld.Environment nextLeftEnvironment;
 
+    private int skyboxCounter;
+
 	private const int NUMBER_OF_BLOCKS = 20;
 	private const int MIN_RUN_SPACE = 5;
 	private const int OBSTACLE_BUFFER = 1;
@@ -80,7 +88,7 @@ public class GenerateWorld : MonoBehaviour
 	//Sets everything up
 	void Start ()
 	{
-		RenderSettings.skybox = oceanSkyBox;
+		RenderSettings.skybox = defaultSkyBox;
 		manageWorldScript = generatedTerrain.GetComponent<ManageWorld> ();
 		manageWorldScript.SetForward ();
 		terrain = new Queue<GameObject> ();
@@ -93,6 +101,7 @@ public class GenerateWorld : MonoBehaviour
 		currentNumberOfBlocks = 0;
 		blocksSinceLastObstacle = 0;
 		numberOfBlocksSinceLastTurn = 0;
+        skyboxCounter = 0;
 		obstaclePercentage = STARTING_OBSTACLE_PERCENTAGE;
 		currentEnvironment = ManageWorld.Environment.ocean;
 		
@@ -131,7 +140,7 @@ public class GenerateWorld : MonoBehaviour
 				numberOfBlocksSinceLastTurn = 0;
 				blocksSinceLastObstacle = 0;
 				nextBlock = 8;
-			} else if (Random.Range (0, 30) < 6) {
+			} else if (Random.Range (0, 30) < 6) {//testing at 6 instead of 1
 				nextBlock = 9;
 			} else {
 				if (Random.Range (0, 10) < obstaclePercentage) {
@@ -174,10 +183,6 @@ public class GenerateWorld : MonoBehaviour
 			AddJumpRightObstacleTerrain (ManageWorld.Environment.ocean);
 		} else if (type == 7) {
 			AddDuckObstacleTerrain (ManageWorld.Environment.ocean);
-		} else if (type == 10) {
-			AddJumpLeftSlant (ManageWorld.Environment.ocean);
-		} else if (type == 11) {
-			AddJumpRightSlant (ManageWorld.Environment.ocean);
 		} else if (type == 8) {
 			AddMakeTurn (ManageWorld.Environment.ocean);
 		} else if (type == 9) {
@@ -219,6 +224,10 @@ public class GenerateWorld : MonoBehaviour
 	{
 		if (terrain.Count > 0) {
 			GameObject remove = terrain.Dequeue ();
+            if(remove.name == "Particles")
+            {
+                remove = terrain.Dequeue();
+            }
 			Destroy (remove);
 			currentNumberOfBlocks--;
 		} else {
@@ -336,11 +345,6 @@ public class GenerateWorld : MonoBehaviour
 		AddBlock (Instantiate (jumpLeftObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
 	}
 
-	private void AddJumpLeftSlant (ManageWorld.Environment theme)
-	{
-		AddBlock (Instantiate (jumpLeftObstacleSlant, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
-	}
-
 	private void AddJumpCenterObstacleTerrain (ManageWorld.Environment theme)
 	{
 		AddBlock (Instantiate (jumpCenterObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
@@ -349,11 +353,6 @@ public class GenerateWorld : MonoBehaviour
 	private void AddJumpRightObstacleTerrain (ManageWorld.Environment theme)
 	{
 		AddBlock (Instantiate (jumpRightObstacleTerrain, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
-	}
-
-	private void AddJumpRightSlant (ManageWorld.Environment theme)
-	{
-		AddBlock (Instantiate (jumpRightObstacleSlant, Vector3.zero, Quaternion.identity) as GameObject, Path.current);
 	}
 
 	private void AddDuckObstacleTerrain (ManageWorld.Environment theme)
@@ -443,6 +442,22 @@ public class GenerateWorld : MonoBehaviour
 	
 	public Material GetSkyBoxMaterial (ManageWorld.Environment skybox)
 	{
+        skyboxCounter++;
+        if (skyboxCounter-1 == 0)
+        {
+            print(skyboxCounter);
+            return tempSkybox1;
+        } else if(skyboxCounter-1 == 1)
+        {
+            return tempSkybox2;
+        } else
+        {
+            print(skyboxCounter);
+            skyboxCounter = 0;
+            return tempSkybox3;
+        }
+
+
 		if (skybox == ManageWorld.Environment.ocean) {
 			return oceanSkyBox;
 		} else if (skybox == ManageWorld.Environment.atmosphere) {
@@ -607,5 +622,10 @@ public class GenerateWorld : MonoBehaviour
 	{
 		return nextRightEnvironment;
 	}
+
+    public GameObject GetSnowParticle()
+    {
+        return snowParticle;
+    }
 	
 }
