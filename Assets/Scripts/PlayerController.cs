@@ -275,6 +275,7 @@ public class PlayerController : MonoBehaviour
 
 	private void Death ()
 	{
+        //manageWorldScript.PrintEnvironmentsYouHaveBeenTo();
 		scoreKeepingScript.SetDeathScore ();
 		Time.timeScale = 0;
 		endGameCanvas.gameObject.SetActive (true);

@@ -104,6 +104,7 @@ public class GenerateWorld : MonoBehaviour
         skyboxCounter = 0;
 		obstaclePercentage = STARTING_OBSTACLE_PERCENTAGE;
 		currentEnvironment = ManageWorld.Environment.ocean;
+        manageWorldScript.AddStartingEnvironment(currentEnvironment);
 		
 		GenerateStartingTerrain ();
 		PlaceStartingTerrain ();

@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 
 public class ManageWorld : MonoBehaviour
 {
@@ -14,6 +14,7 @@ public class ManageWorld : MonoBehaviour
     private Direction previousDir;
     private int depth;
     private int gameObjectID;
+    private List<Environment> placesYouHaveBeen = new List<Environment>();
 
     private const float FORWARD_SPEED = 23.0f;
 	private const int REGENERATE_LIMIT = 20;
@@ -142,8 +143,19 @@ public class ManageWorld : MonoBehaviour
         }
 	}
 
-	//Changes which axis will start to change
-	public void TurnRight ()
+    public void AddStartingEnvironment(Environment env)
+    {
+        placesYouHaveBeen.Add(env);
+    }
+    public void PrintEnvironmentsYouHaveBeenTo()
+    {
+        foreach(Environment environment in placesYouHaveBeen)
+        {
+            print(environment.ToString());
+        }
+    }
+    //Changes which axis will start to change
+    public void TurnRight ()
 	{
 		if (direction == Direction.left)
 			direction = Direction.forward;
@@ -214,5 +226,7 @@ public class ManageWorld : MonoBehaviour
 		generateWorldScript.SetCurrentEnvironment (currentSkyBox);
 		
 		scoreKeepingScript.SetSkyBoxEnvironment (currentSkyBox);
+        placesYouHaveBeen.Add(newEnvironment);
+
 	}
 }
