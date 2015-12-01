@@ -445,14 +445,12 @@ public class GenerateWorld : MonoBehaviour
         skyboxCounter++;
         if (skyboxCounter-1 == 0)
         {
-            print(skyboxCounter);
             return tempSkybox1;
         } else if(skyboxCounter-1 == 1)
         {
             return tempSkybox2;
         } else
         {
-            print(skyboxCounter);
             skyboxCounter = 0;
             return tempSkybox3;
         }
