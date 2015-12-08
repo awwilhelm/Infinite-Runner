@@ -12,8 +12,11 @@ public class ScoreKeeping : MonoBehaviour
 	public Text currentEnvironment;
 	public Text nextLeftEnvironment;
 	public Text nextRightEnvironment;
+    public Text wrongText;
 	public int score;
+    public int wrong;
 	private GenerateWorld generateWorldScript;
+    public GameObject wrongScoreBoard;
 	
 	// Use this for initialization
 	
@@ -50,8 +53,15 @@ public class ScoreKeeping : MonoBehaviour
 	{
 		deathScore.text = "Score: " + score;
 	}
-	
-	public void SetSkyBoxEnvironment (ManageWorld.Environment skybox)
+
+    public void GoToScorePage(int amountWrong)
+    {
+        wrong = amountWrong;
+        wrongText.text = "Number of wrong answers: " + wrong;
+        wrongScoreBoard.SetActive(true);
+    }
+
+    public void SetSkyBoxEnvironment (ManageWorld.Environment skybox)
 	{
 		currentEnvironment.text = "Current Environment: " + SkyBoxToString (skybox);
 		nextLeftEnvironment.text = "Next Left Environment: " + SkyBoxToString (generateWorldScript.GetNextLeftEnvironment ());

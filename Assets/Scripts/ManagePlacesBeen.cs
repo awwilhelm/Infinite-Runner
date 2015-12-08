@@ -1,22 +1,7 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 
 public class ManagePlacesBeen : MonoBehaviour {
-
-    public struct EnviromentBeen
-    {
-        public bool ocean;
-        public bool atmoshere;
-        public bool cloud;
-        public bool rain;
-        public bool snow;
-        public bool runoff;
-        public bool fog;
-        public bool lake;
-        public bool groundwater;
-        public bool plantuptake;
-    }
-    EnviromentBeen environmentBeen;
 
     public GameObject oceanGameObject;
     public GameObject atmosphereGameObject;
@@ -28,12 +13,19 @@ public class ManagePlacesBeen : MonoBehaviour {
     public GameObject lakeGameObject;
     public GameObject groundwaterGameObject;
     public GameObject plantuptakeGameObject;
+    public GameObject endGameGameObject;
+
+    private bool[] environmentBeen = new bool[10];
 
     private PlayerController playerControllerScript;
+    private ManageWorld manageWorldScript;
+    private ScoreKeeping scoreKeepingScript;
 
     // Use this for initialization
     void Start () {
-        playerControllerScript.GetComponent<PlayerController>();
+        playerControllerScript = GameObject.Find("Player").GetComponent<PlayerController>();
+        manageWorldScript = GameObject.Find("Generated Terrain").GetComponent<ManageWorld>();
+        scoreKeepingScript = GameObject.Find("World").GetComponent<ScoreKeeping>();
 	}
 	
 	// Update is called once per frame
@@ -43,61 +35,80 @@ public class ManagePlacesBeen : MonoBehaviour {
 
     public void ToggleEnvironment(int intType)
     {
+        environmentBeen[intType] = !environmentBeen[intType];
+
         ManageWorld.Environment environmentType = (ManageWorld.Environment) intType;
         if(environmentType == ManageWorld.Environment.ocean)
         {
-            environmentBeen.ocean = !environmentBeen.ocean;
             oceanGameObject.transform.GetChild(1).gameObject.SetActive(!oceanGameObject.transform.GetChild(1).gameObject.activeSelf);
         } else if (environmentType == ManageWorld.Environment.atmosphere)
         {
-            environmentBeen.atmoshere = !environmentBeen.atmoshere;
             atmosphereGameObject.transform.GetChild(1).gameObject.SetActive(!atmosphereGameObject.transform.GetChild(1).gameObject.activeSelf);
         } else if (environmentType == ManageWorld.Environment.cloud)
         {
-            environmentBeen.cloud = !environmentBeen.cloud;
             cloudGameObject.transform.GetChild(1).gameObject.SetActive(!cloudGameObject.transform.GetChild(1).gameObject.activeSelf);
         }  else if (environmentType == ManageWorld.Environment.rain)
         {
-            environmentBeen.rain = !environmentBeen.rain;
             rainGameObject.transform.GetChild(1).gameObject.SetActive(!rainGameObject.transform.GetChild(1).gameObject.activeSelf);
         } else if (environmentType == ManageWorld.Environment.snow)
         {
-            environmentBeen.snow = !environmentBeen.snow;
             snowGameObject.transform.GetChild(1).gameObject.SetActive(!snowGameObject.transform.GetChild(1).gameObject.activeSelf);
         } else if (environmentType == ManageWorld.Environment.runoff)
         {
-            environmentBeen.runoff = !environmentBeen.runoff;
             runoffGameObject.transform.GetChild(1).gameObject.SetActive(!runoffGameObject.transform.GetChild(1).gameObject.activeSelf);
         } else if (environmentType == ManageWorld.Environment.fog)
         {
-            environmentBeen.fog = !environmentBeen.fog;
             fogGameObject.transform.GetChild(1).gameObject.SetActive(!fogGameObject.transform.GetChild(1).gameObject.activeSelf);
         } else if (environmentType == ManageWorld.Environment.lake)
         {
-            environmentBeen.lake = !environmentBeen.lake;
             lakeGameObject.transform.GetChild(1).gameObject.SetActive(!lakeGameObject.transform.GetChild(1).gameObject.activeSelf);
         }  else if (environmentType == ManageWorld.Environment.groundwater)
         {
-            environmentBeen.groundwater = !environmentBeen.groundwater;
             groundwaterGameObject.transform.GetChild(1).gameObject.SetActive(!groundwaterGameObject.transform.GetChild(1).gameObject.activeSelf);
         } else if (environmentType == ManageWorld.Environment.plantUptake)
         {
-            environmentBeen.plantuptake = !environmentBeen.plantuptake;
             plantuptakeGameObject.transform.GetChild(1).gameObject.SetActive(!plantuptakeGameObject.transform.GetChild(1).gameObject.activeSelf);
         }
-        PrintList();
+        //PrintList();
     }
 
     public void CheckPlacesBeen()
     {
         //TODO: Compare and contrast different ways of setting up the list of booleans so we can compare if they are the same.
+        List<ManageWorld.Environment> listOfPlacesBeen = manageWorldScript.GetPlacesBeen();
+        listOfPlacesBeen.Sort();
+        int counter = 0;
+        int wrong = 0;
+        for(int i = 0; i<10; i++)
+        {
+            if(counter < listOfPlacesBeen.Count && listOfPlacesBeen[counter] == (ManageWorld.Environment)i)
+            {
+                if(!environmentBeen[i])
+                {
+                    wrong++;
+                }
+                counter++;
+            } else
+            {
+                if(environmentBeen[i])
+                {
+                    wrong++;
+                }
+            }
+        }
+        endGameGameObject.SetActive(false);
+        scoreKeepingScript.GoToScorePage(wrong);
 
+        //foreach(ManageWorld.Environment list in listOfPlacesBeen)
+        //{
+        //    print(list.ToString());
+        //}
         //playerControllerScript.RestartLevel();
     }
 
     private void PrintList()
     {
-        print(environmentBeen.ocean + " " + environmentBeen.atmoshere + " " + environmentBeen.cloud + " " + environmentBeen.rain + " " + environmentBeen.snow +
-            " " + environmentBeen.runoff + " " + environmentBeen.fog + " " + environmentBeen.lake + " " + environmentBeen.groundwater + " " + environmentBeen.plantuptake);
+        print(environmentBeen[0] + " " + environmentBeen[1] + " " + environmentBeen[2] + " " + environmentBeen[3] + " " + environmentBeen[4] +
+         " " + environmentBeen[5] + " " + environmentBeen[6] + " " + environmentBeen[7] + " " + environmentBeen[8] + " " + environmentBeen[9]);
     }
 }

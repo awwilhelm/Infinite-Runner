@@ -154,6 +154,11 @@ public class ManageWorld : MonoBehaviour
             print(environment.ToString());
         }
     }
+
+    public List<Environment> GetPlacesBeen()
+    {
+        return placesYouHaveBeen;
+    }
     //Changes which axis will start to change
     public void TurnRight ()
 	{

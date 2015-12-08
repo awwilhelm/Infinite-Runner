@@ -141,7 +141,7 @@ public class GenerateWorld : MonoBehaviour
 				numberOfBlocksSinceLastTurn = 0;
 				blocksSinceLastObstacle = 0;
 				nextBlock = 8;
-			} else if (Random.Range (0, 30) < 6) {//testing at 6 instead of 1
+			} else if (Random.Range (0, 30) < 2) {//testing at 6 instead of 1
 				nextBlock = 9;
 			} else {
 				if (Random.Range (0, 10) < obstaclePercentage) {
@@ -443,18 +443,18 @@ public class GenerateWorld : MonoBehaviour
 	
 	public Material GetSkyBoxMaterial (ManageWorld.Environment skybox)
 	{
-        skyboxCounter++;
-        if (skyboxCounter-1 == 0)
-        {
-            return tempSkybox1;
-        } else if(skyboxCounter-1 == 1)
-        {
-            return tempSkybox2;
-        } else
-        {
-            skyboxCounter = 0;
-            return tempSkybox3;
-        }
+        //skyboxCounter++;
+        //if (skyboxCounter-1 == 0)
+        //{
+        //    return tempSkybox1;
+        //} else if(skyboxCounter-1 == 1)
+        //{
+        //    return tempSkybox2;
+        //} else
+        //{
+        //    skyboxCounter = 0;
+        //    return tempSkybox3;
+        //}
 
 
 		if (skybox == ManageWorld.Environment.ocean) {
